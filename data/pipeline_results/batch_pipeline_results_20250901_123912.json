@@ -1,0 +1,11 @@
+[
+  {
+    "youtube_url": "https://youtu.be/Rxoj94WQpsQ?si=2Ki5S_NoM6SyELOj",
+    "custom_name": null,
+    "pipeline_start": "2025-09-01 12:39:09",
+    "stages": {},
+    "status": "failed",
+    "error": "Failed to retrieve subtitles for video_id: Rxoj94WQpsQ",
+    "total_duration": 3.1200144290924072
+  }
+]

@@ -1,0 +1,5 @@
+pyyaml
+youtube-transcript-api
+openai
+tiktoken
+orjson

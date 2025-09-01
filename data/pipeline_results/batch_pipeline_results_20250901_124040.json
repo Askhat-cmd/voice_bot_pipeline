@@ -1,0 +1,19 @@
+[
+  {
+    "youtube_url": "https://youtu.be/Rxoj94WQpsQ?si=2Ki5S_NoM6SyELOj",
+    "custom_name": null,
+    "pipeline_start": "2025-09-01 12:40:38",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.522765874862671,
+        "json_path": "data\\subtitles\\Rxoj94WQpsQ.json",
+        "srt_path": "data\\subtitles\\Rxoj94WQpsQ.srt",
+        "txt_path": "data\\subtitles\\Rxoj94WQpsQ.txt"
+      }
+    },
+    "status": "failed",
+    "error": "'SarsekenovProcessor' object has no attribute 'process_subtitles_file'",
+    "total_duration": 1.5255398750305176
+  }
+]

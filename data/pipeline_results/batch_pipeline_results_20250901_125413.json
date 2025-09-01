@@ -1,0 +1,32 @@
+[
+  {
+    "youtube_url": "https://youtu.be/Rxoj94WQpsQ?si=2Ki5S_NoM6SyELOj",
+    "custom_name": null,
+    "pipeline_start": "2025-09-01 12:51:53",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.664057970046997,
+        "json_path": "data\\subtitles\\Rxoj94WQpsQ.json",
+        "srt_path": "data\\subtitles\\Rxoj94WQpsQ.srt",
+        "txt_path": "data\\subtitles\\Rxoj94WQpsQ.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 137.9141457080841,
+        "json_output": "data\\vector_ready\\Rxoj94WQpsQ.for_vector.json",
+        "md_output": "data\\vector_ready\\Rxoj94WQpsQ.for_review.md",
+        "blocks_created": 9
+      }
+    },
+    "status": "success",
+    "total_duration": 139.5793435573578,
+    "pipeline_end": "2025-09-01 12:54:13",
+    "final_outputs": {
+      "vector_json": "data\\vector_ready\\Rxoj94WQpsQ.for_vector.json",
+      "review_markdown": "data\\vector_ready\\Rxoj94WQpsQ.for_review.md",
+      "subtitle_json": "data\\subtitles\\Rxoj94WQpsQ.json",
+      "subtitle_srt": "data\\subtitles\\Rxoj94WQpsQ.srt"
+    }
+  }
+]
