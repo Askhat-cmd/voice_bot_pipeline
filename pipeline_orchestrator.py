@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Voice Bot Pipeline Orchestrator (Simplified)
-Coordinates the pipeline: YouTube Subtitles -> Structured Data
+Voice Bot Pipeline Orchestrator (SAG v2.0 Optimized)
+Coordinates the pipeline: YouTube Subtitles -> SAG v2.0 Final Data
 """
 
 import argparse
@@ -18,12 +18,11 @@ import yaml
 
 from env_utils import load_env
 from subtitle_extractor.get_subtitles import YouTubeSubtitlesExtractor
-from text_processor.subtitles_to_blocks import SubtitlesProcessor
 from text_processor.sarsekenov_processor import SarsekenovProcessor
 
 class PipelineOrchestrator:
     def __init__(self, config_path: str, domain: str = "sarsekenov"):
-        """Initialize the pipeline orchestrator"""
+        """Initialize the pipeline orchestrator for SAG v2.0"""
         # 1) env
         load_env()
         # 2) config
@@ -33,15 +32,12 @@ class PipelineOrchestrator:
         self._setup_logging()
         self.logger = logging.getLogger("pipeline")
         self._setup_dirs()
-        # 4) stages
+        # 4) stages - только SAG v2.0
         self.subtitle_extractor = YouTubeSubtitlesExtractor(
             output_dir=self.config['pipeline']['subtitles']['output_dir']
         )
-        # Выбор процессора по домену
-        if domain.lower() == "sarsekenov":
-            self.text_processor = SarsekenovProcessor()
-        else:
-            self.text_processor = SubtitlesProcessor()
+        # Только SarsekenovProcessor для SAG v2.0
+        self.text_processor = SarsekenovProcessor()
     
     def _setup_logging(self) -> None:
         log_cfg = self.config['logging']
@@ -59,25 +55,26 @@ class PipelineOrchestrator:
         for d in [
             self.config['pipeline']['subtitles']['output_dir'],
             self.config['pipeline']['text_processing']['output_dir'],
-            self.config['pipeline']['results_dir'],
         ]:
             Path(d).mkdir(parents=True, exist_ok=True)
     
     def run_full_pipeline(self, youtube_url: str, custom_name: str = None) -> Dict[str, Any]:
-        """Run the complete pipeline for a single YouTube URL"""
+        """Run the complete SAG v2.0 pipeline for a single YouTube URL"""
         pipeline_start = time.time()
         results = {
             "youtube_url": youtube_url,
             "custom_name": custom_name,
             "pipeline_start": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "schema_version": "2.0",
+            "processing_version": "v2.1",
             "stages": {}
         }
         
-        self.logger.info(f"Starting pipeline for: {youtube_url}")
+        self.logger.info(f"🚀 Starting SAG v2.0 pipeline for: {youtube_url}")
         
         try:
-            # Stage 1: Get Subtitles
-            self.logger.info("Stage 1: Downloading subtitles from YouTube")
+            # Stage 1: Get Subtitles (временная папка)
+            self.logger.info("📥 Stage 1: Downloading subtitles from YouTube")
             stage1_start = time.time()
             
             video_id = self.subtitle_extractor.extract_video_id(youtube_url)
@@ -100,13 +97,14 @@ class PipelineOrchestrator:
             }
             self.logger.info(f"Stage 1 complete: {saved_files['json']}")
             
-            # Stage 2: Text Processing
-            self.logger.info("Stage 2: Processing text for vector database")
+            # Stage 2: Text Processing (SAG v2.0)
+            self.logger.info("📝 Stage 2: Processing text for SAG v2.0")
             stage2_start = time.time()
             
             transcript_path = Path(saved_files["json"])
             output_dir = Path(self.config['pipeline']['text_processing']['output_dir'])
             
+            # Прямая обработка в SAG v2.0
             text_result = self.text_processor.process_subtitles_file(
                 transcript_path, output_dir
             )
@@ -114,11 +112,19 @@ class PipelineOrchestrator:
             results["stages"]["text_processing"] = {
                 "status": "success", 
                 "duration": time.time() - stage2_start,
-                "json_output": text_result["json_output"],
-                "md_output": text_result["md_output"],
-                "blocks_created": text_result["blocks_created"]
+                "sag_v2_output": text_result["json_output"],
+                "review_markdown": text_result["md_output"],
+                "blocks_created": text_result["blocks_created"],
+                "schema_version": "2.0"
             }
-            self.logger.info(f"Stage 2 complete: {text_result['blocks_created']} blocks created")
+            self.logger.info(f"✅ Stage 2 complete: {text_result['blocks_created']} SAG v2.0 blocks created")
+            
+            # Stage 3: Pipeline завершен
+            self.logger.info("✅ Stage 3: Pipeline complete")
+            results["stages"]["pipeline_complete"] = {
+                "status": "success",
+                "duration": 0.0
+            }
             
             # Pipeline Summary
             total_duration = time.time() - pipeline_start
@@ -127,15 +133,14 @@ class PipelineOrchestrator:
                 "total_duration": total_duration,
                 "pipeline_end": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "final_outputs": {
-                    "vector_json": text_result["json_output"],
-                    "review_markdown": text_result["md_output"],
-                    "subtitle_json": saved_files["json"],
-                    "subtitle_srt": saved_files["srt"]
+                    "sag_v2_json": text_result["json_output"],
+                    "review_markdown": text_result["md_output"]
                 }
             })
             
-            self.logger.info(f"Pipeline complete! Total time: {total_duration:.1f}s")
-            self.logger.info(f"Vector-ready JSON: {text_result['json_output']}")
+            self.logger.info(f"🎯 SAG v2.0 Pipeline complete! Total time: {total_duration:.1f}s")
+            self.logger.info(f"📁 SAG v2.0 JSON: {text_result['json_output']}")
+            self.logger.info(f"📖 Review Markdown: {text_result['md_output']}")
             
             return results
             
@@ -153,27 +158,37 @@ class PipelineOrchestrator:
         with open(urls_file, 'r') as f:
             urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
         
-        self.logger.info(f"Starting batch pipeline for {len(urls)} URLs")
+        self.logger.info(f"🚀 Starting SAG v2.0 batch pipeline for {len(urls)} URLs")
         results = []
         
         for i, url in enumerate(urls, 1):
-            self.logger.info(f"Processing URL {i}/{len(urls)}: {url}")
+            self.logger.info(f"📝 Processing URL {i}/{len(urls)}: {url}")
             result = self.run_full_pipeline(url)
             results.append(result)
             
-            # Save intermediate results
-            with open("batch_results.json", "w") as f:
+            # Save batch results in raw_subtitles folder (не в SAG!)
+            batch_dir = Path(self.config['pipeline']['subtitles']['output_dir'])
+            batch_file = batch_dir / "batch_results.json"
+            with open(batch_file, "w") as f:
                 json.dump(results, f, indent=2, ensure_ascii=False)
+            
+            # Очищаем старые batch результаты (оставляем только последние 2)
+            batch_results = list(batch_dir.glob("batch_pipeline_results_*.json"))
+            if len(batch_results) > 2:
+                batch_results.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+                for old_batch in batch_results[2:]:
+                    old_batch.unlink()
+                    self.logger.info(f"🗑️ Old batch result removed: {old_batch.name}")
         
         return results
 
 def main():
-    parser = argparse.ArgumentParser(description="Voice Bot Pipeline Orchestrator (Subtitles-only)")
+    parser = argparse.ArgumentParser(description="Voice Bot Pipeline Orchestrator (SAG v2.0)")
     parser.add_argument("--url", help="Single YouTube URL to process")
     parser.add_argument("--urls-file", help="File containing multiple URLs (one per line)")
     parser.add_argument("--name", help="Custom name for the output files (defaults to video_id)")
     parser.add_argument("--config", required=True, help="Configuration file")
-    parser.add_argument("--domain", default="sarsekenov", help="Domain processor: sarsekenov|generic")
+    parser.add_argument("--domain", default="sarsekenov", help="Domain processor (always sarsekenov for SAG v2.0)")
     
     args = parser.parse_args()
     
@@ -195,7 +210,8 @@ def main():
     if args.url:
         result = orchestrator.run_full_pipeline(args.url, args.name)
         
-        results_dir = Path(orchestrator.config['pipeline']['results_dir'])
+        # Сохраняем результаты в raw_subtitles папку (не в SAG!)
+        results_dir = Path(orchestrator.config['pipeline']['subtitles']['output_dir'])
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         results_file = results_dir / f"pipeline_result_{timestamp}.json"
         with open(results_file, "w") as f:
@@ -204,7 +220,7 @@ def main():
         print(f"\n[SUCCESS] Pipeline results saved: {results_file}")
         
         if result["status"] == "success":
-            print(f"[OUTPUT] Vector JSON: {result['final_outputs']['vector_json']}")
+            print(f"[OUTPUT] SAG v2.0 JSON: {result['final_outputs']['sag_v2_json']}")
             print(f"[OUTPUT] Review MD: {result['final_outputs']['review_markdown']}")
             return 0
         else:
@@ -214,14 +230,15 @@ def main():
     elif args.urls_file:
         results = orchestrator.run_batch_pipeline(args.urls_file)
         
-        results_dir = Path(orchestrator.config['pipeline']['results_dir'])
+        # Сохраняем batch результаты в raw_subtitles папку (не в SAG!)
+        results_dir = Path(orchestrator.config['pipeline']['subtitles']['output_dir'])
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         results_file = results_dir / f"batch_pipeline_results_{timestamp}.json"
         with open(results_file, "w") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
         
         successful = sum(1 for r in results if r["status"] == "success")
-        print(f"\n[BATCH COMPLETE] {successful}/{len(results)} URLs processed successfully")
+        print(f"\n[BATCH COMPLETE] SAG v2.0: {successful}/{len(results)} URLs processed successfully")
         print(f"[RESULTS] Saved to: {results_file}")
         
         return 0 if successful == len(results) else 1

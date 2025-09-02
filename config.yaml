@@ -1,4 +1,4 @@
-# Configuration for the Voice Bot Pipeline (Simplified)
+# Configuration for the Voice Bot Pipeline (SAG v2.0 Optimized)
 
 # Logging configuration
 logging:
@@ -7,15 +7,15 @@ logging:
 
 # Global pipeline settings
 pipeline:
-  # YouTube subtitles download settings
+  # YouTube subtitles download settings (сохраняем для анализа)
   subtitles:
-    output_dir: "data/subtitles"
+    output_dir: "data/raw_subtitles"  # Сохраняем сырые субтитры
     # Options: "ru", "en", etc.
     language: "ru"
 
-  # Text processing settings
+  # Text processing settings - DIRECT TO SAG v2.0
   text_processing:
-    output_dir: "data/vector_ready"
+    output_dir: "data/sag_final"  # Прямо в финальную папку SAG v2.0
 
   # Directory for pipeline run results and logs
-  results_dir: "data/pipeline_results"
+  results_dir: "data/sag_final"  # Результаты тоже в SAG v2.0
