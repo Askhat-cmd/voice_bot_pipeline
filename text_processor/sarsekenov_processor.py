@@ -1290,18 +1290,32 @@ class SarsekenovProcessor:
 
 СОЗДАЙ:
 1) **Краткое оглавление** (одно предложение с основными темами по порядку)
-2) **Обзор лекции** (2-3 предложения о содержании, подходе Сарсекенова, ключевых инсайтах)
+2) **Обзор лекции** (3-4 развернутых предложения о содержании, подходе Сарсекенова, ключевых инсайтах)
 
 ТРЕБОВАНИЯ:
 - Сохраняй терминологию нейросталкинга
 - Укажи специфику подхода автора
 - Отрази уровень сложности и формат
-- Максимум 200 слов общий объем
+- **МИНИМУМ 200 символов** в обзоре (это критично!)
+- **ИСПОЛЬЗУЙ ПРАВИЛЬНЫЕ ГРАММАТИЧЕСКИЕ ФОРМЫ для русских терминов:**
+  * "исследование осознания" (не "исследование осознание")
+  * "практики медитации" (не "практики медитация") 
+  * "природа восприятия" (не "природа восприятие")
+  * "интеграция опыта" (не "интеграция опыт")
+  * "трансформация сознания" (не "трансформация сознание")
+  
+**КОНКРЕТНЫЕ ПРИМЕРЫ для данной лекции:**
+- Если тема "исцеление" → используй "исцеления" (родительный падеж)
+- Если тема "осознавание" → используй "осознавания" (родительный падеж)
+- Если тема "божественность" → используй "божественности" (родительный падеж)
+- Если тема "автоматизмы" → используй "автоматизмов" (родительный падеж)
+- Если тема "самопознание" → используй "самопознания" (родительный падеж)
+- Добавь детали о практических аспектах и инсайтах
 
 ФОРМАТ ОТВЕТА:
 ОГЛАВЛЕНИЕ: [краткое оглавление одним предложением]
 
-ОБЗОР: [развернутый обзор лекции 2-3 предложения]
+ОБЗОР: [развернутый обзор лекции 3-4 предложения, минимум 200 символов]
 """
             
             resp = self._ask(self.refine_model or self.primary_model, prompt, max_tokens=400, temperature=0.2)
@@ -1321,9 +1335,14 @@ class SarsekenovProcessor:
             
             overview_summary = " ".join(summary_lines).strip()
             
+            # ВАЛИДАЦИЯ: Проверяем минимальную длину overview
+            if len(overview_summary) < 200:
+                print(f"[WARNING] LLM overview слишком короткий ({len(overview_summary)} символов), используем fallback с морфологией")
+                overview_summary = self._generate_fallback_summary(metadata, top_entities)
+            
             return {
                 "overview_toc": toc_line or toc_sentence_default,
-                "overview_summary": overview_summary[:800] if overview_summary else self._generate_fallback_summary(metadata, top_entities),
+                "overview_summary": overview_summary[:800],
             }
             
         except Exception as e:
@@ -1338,6 +1357,7 @@ class SarsekenovProcessor:
         main_topics = metadata.get("main_topics", [])
         collection = metadata.get("collection_target", "neurostalking_basics")
         has_dialogue = metadata.get("has_dialogue", False)
+        difficulty_level = metadata.get("difficulty_level", "intermediate")
         
         # Морфологические формы для частых терминов (родительный падеж)
         morph_dict = {
@@ -1358,7 +1378,18 @@ class SarsekenovProcessor:
             "божественность": "божественности",
             "центрирование": "центрирования",
             "внимание": "внимания",
-            "присутствие": "присутствия"
+            "присутствие": "присутствия",
+            "паттерн": "паттернов",
+            "паттерны": "паттернов",
+            "автоматизм": "автоматизмов",
+            "автоматизмы": "автоматизмов",
+            "самопознание": "самопознания",
+            "сознание": "сознания",
+            "абсолют": "абсолюта",
+            "природа": "природы",
+            "опыт": "опыта",
+            "мудрость": "мудрости",
+            "рост": "роста"
         }
         
         # Синонимы для разнообразия
@@ -1412,6 +1443,40 @@ class SarsekenovProcessor:
         import re
         text = re.sub(r'\s+', ' ', text)
         text = re.sub(r',\s*,', ',', text)
+        
+        # ВАЛИДАЦИЯ: Если текст слишком короткий, добавляем детали
+        if len(text.strip()) < 200:
+            # Добавляем дополнительные детали для достижения минимума
+            additional_details = []
+            
+            if has_dialogue:
+                additional_details.append("Особое внимание уделяется интерактивному формату с вопросами и ответами.")
+            
+            if difficulty_level == "advanced":
+                additional_details.append("Материал рассчитан на продвинутый уровень практикующих.")
+            elif difficulty_level == "beginner":
+                additional_details.append("Лекция подходит для начинающих практиков нейросталкинга.")
+            
+            if main_topics and len(main_topics) > 2:
+                additional_details.append(f"Дополнительно рассматриваются аспекты {' и '.join(main_topics[2:4])}.")
+            
+            # ОБЯЗАТЕЛЬНЫЕ дополнения для достижения минимума
+            if collection != "neurostalking_basics":
+                additional_details.append(f"Лекция относится к коллекции '{collection}' и содержит специализированные практики.")
+            
+            # Добавляем детали о ключевых концептах
+            if top_entities and len(top_entities) > 0:
+                top_concepts = [e[0] for e in top_entities[:3]]
+                additional_details.append(f"Ключевые концепты включают: {', '.join(top_concepts)}.")
+            
+            # Добавляем информацию о формате
+            if has_dialogue:
+                additional_details.append("Интерактивный формат позволяет участникам задавать вопросы и получать практические ответы.")
+            else:
+                additional_details.append("Монологический формат обеспечивает глубокое погружение в тему.")
+            
+            if additional_details:
+                text += " " + " ".join(additional_details)
         
         return text.strip()
 
