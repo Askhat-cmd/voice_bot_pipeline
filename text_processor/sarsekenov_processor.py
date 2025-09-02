@@ -9,6 +9,7 @@ Sarsekenov-Specific Subtitle Processor
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -56,11 +57,12 @@ class SarsekenovProcessor:
 
         # Доменные указания для более точной обработки речи Сарсекенова
         self.domain_context = (
-            "Это лекция Саламата Сарсекенова. Направление: нейросталкинг/неосталкинг. "
-            "Строго сохраняй терминологию и авторские формулировки. "
-            "Типичные термины и темы: нейросталкинг, неосталкинг, внимание, поле внимания, наблюдение за умом, "
-            "осознавание, метанаблюдение, паттерны, триггеры, автоматизмы, исследование переживаний, практика, упражнения, вопросы аудитории, разборы. "
-            "Не переписывай смысл своими словами — очищай речь от шума, сохраняя стиль.")
+            "Это лекция Саламата Сарсекенова по нейросталкингу/неосталкингу. "
+            "СТРОГО сохраняй терминологию и авторские формулировки: нейросталкинг, неосталкинг, "
+            "поле внимания, наблюдение за умом, метанаблюдение, осознавание, паттерны, триггеры, "
+            "автоматизмы, исследование переживаний. "
+            "ДОПОЛНИТЕЛЬНО: исправь очевидные речевые сбои и грамматические ошибки "
+            "БЕЗ изменения смысла. Убери избыточные междометия, но сохрани естественность речи.")
 
     # ---------------------- Internal helpers ---------------------- #
     def _tok(self, text: str) -> int:
@@ -78,18 +80,102 @@ class SarsekenovProcessor:
         )
         return r.choices[0].message.content
 
-    # Очень лёгкая очистка шума, без изменения смысла
+    # Улучшенная очистка с сохранением авторского стиля
     def _light_clean(self, text: str) -> str:
+        """
+        Улучшенная очистка с сохранением авторского стиля
+        Убираем: технический шум, междометия, грамматические ошибки, речевые сбои
+        """
+        # Технический шум (базовый)
         replacements = [
-            ("[музыка]", ""),
-            ("[Music]", ""),
-            (">>", ""),
+            ("[музыка]", ""), ("[Music]", ""), (">>", ""), ("&gt;&gt;", ""),
         ]
+        
+        # НОВОЕ: Междометия и речевые сбои
+        speech_fixes = [
+            # Междометия (с пробелами для точности)
+            (" ээ ", " "), (" э-э ", " "), (" эээ ", " "), (" ээээ ", " "),
+            (" ах ", " "), (" ох ", " "), (" ух ", " "), (" эх ", " "),
+            (" мм ", " "), (" хм ", " "), (" ну ", " "),
+            
+            # Начало и конец предложений
+            ("Ээ, ", ""), ("Эх, ", ""), ("Ох, ", ""), ("Ах, ", ""),
+            (" ээ,", ","), (" ох,", ","), (" ах,", ","),
+            
+            # Явные грамматические ошибки
+            ("пото что", "потому что"),
+            ("новосте", "новости"), 
+            ("боговесть", "божественность"),
+            ("потму что", "потому что"),
+            ("тоесть", "то есть"),
+            ("вобще", "вообще"),
+            
+            # Избыточные повторы слов
+            (" вот вот ", " вот "), (" это это ", " это "),
+            (" да да ", " да "), (" ну ну ", " ну "),
+            
+            # Речевые сбои (осторожно, только явные)
+            ("мало ли что", ""), ("я не знаю, ", ""),
+            ("как бы ", " "), ("типа ", " "),
+            ("короче говоря", "короче"),
+        ]
+        
         cleaned = text
-        for a, b in replacements:
-            cleaned = cleaned.replace(a, b)
-        cleaned = " ".join(cleaned.split())
+        for old, new in replacements + speech_fixes:
+            cleaned = cleaned.replace(old, new)
+        
+        # Убираем множественные пробелы и лишние знаки
+        cleaned = re.sub(r'\s+', ' ', cleaned)
+        cleaned = re.sub(r'\s*,\s*,', ',', cleaned)  # двойные запятые
+        cleaned = re.sub(r'\s*\.\s*\.', '.', cleaned)  # двойные точки
+        
         return cleaned.strip()
+
+    def _final_polish(self, text: str) -> str:
+        """
+        Финальная полировка текста - умное удаление избыточных слов-паразитов
+        Убираем каждое второе "вот", "это" если их слишком много в абзаце
+        """
+        paragraphs = text.split('\n')
+        polished_paragraphs = []
+        
+        for para in paragraphs:
+            if not para.strip():
+                polished_paragraphs.append(para)
+                continue
+                
+            words = para.split()
+            
+            # Убираем каждое второе "вот" если их больше 3 в абзаце
+            vot_count = words.count('вот')
+            if vot_count > 3:
+                vot_removed = 0
+                for i, word in enumerate(words):
+                    if word == 'вот' and vot_removed < vot_count // 2:
+                        words[i] = ''
+                        vot_removed += 1
+            
+            # Убираем каждое третье "это" если их больше 5 в абзаце
+            eto_count = words.count('это')
+            if eto_count > 5:
+                eto_removed = 0
+                for i, word in enumerate(words):
+                    if word == 'это' and eto_removed < eto_count // 3:
+                        words[i] = ''
+                        eto_removed += 1
+            
+            # Убираем лишние "ну" в начале предложений
+            nu_pattern = []
+            for i, word in enumerate(words):
+                if word == 'ну' and (i == 0 or words[i-1].endswith('.') or words[i-1].endswith('!')):
+                    # Оставляем только каждое второе "ну" в начале предложений
+                    if len(nu_pattern) % 2 == 1:
+                        words[i] = ''
+                    nu_pattern.append(i)
+            
+            polished_paragraphs.append(' '.join(w for w in words if w))
+        
+        return '\n'.join(polished_paragraphs)
 
     # ---------------------- IO ---------------------- #
     def load_input(self, file_path: Path) -> Dict[str, Any]:
@@ -210,6 +296,9 @@ class SarsekenovProcessor:
             for b in blocks:
                 b.setdefault("start", st)
                 b.setdefault("end", et)
+                # Применяем финальную полировку к содержимому блока
+                if 'content' in b:
+                    b['content'] = self._final_polish(b['content'])
             return blocks
         except Exception:
             # Безопасный резерв: вернуть исходный фрагмент без изменений смысла
@@ -219,7 +308,7 @@ class SarsekenovProcessor:
                 "title": "Фрагмент лекции (без изменений)",
                 "summary": "Блок сформирован из исходного текста (минимальная очистка).",
                 "keywords": ["нейросталкинг"],
-                "content": source_text
+                "content": self._final_polish(source_text)
             }]
 
     def refine_blocks(self, blocks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -243,7 +332,12 @@ class SarsekenovProcessor:
                 resp = resp[3:]
             if resp.endswith("```"):
                 resp = resp[:-3]
-            return orjson.loads(resp)
+            refined_blocks = orjson.loads(resp)
+            # Применяем финальную полировку к отрефайненным блокам
+            for b in refined_blocks:
+                if 'content' in b:
+                    b['content'] = self._final_polish(b['content'])
+            return refined_blocks
         except Exception:
             return blocks
 

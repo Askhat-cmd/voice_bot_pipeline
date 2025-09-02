@@ -1,0 +1,19 @@
+[
+  {
+    "youtube_url": "https://youtu.be/zwCplRcmr0k?si=uO4XtXTMd4ti3-7W",
+    "custom_name": null,
+    "pipeline_start": "2025-09-01 17:26:37",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.5838689804077148,
+        "json_path": "data\\subtitles\\zwCplRcmr0k.json",
+        "srt_path": "data\\subtitles\\zwCplRcmr0k.srt",
+        "txt_path": "data\\subtitles\\zwCplRcmr0k.txt"
+      }
+    },
+    "status": "failed",
+    "error": "name 're' is not defined",
+    "total_duration": 1.617753267288208
+  }
+]
