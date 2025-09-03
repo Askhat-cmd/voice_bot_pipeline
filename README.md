@@ -252,6 +252,22 @@ voice_bot_pipeline/
 - Создает необходимые папки
 - Проверяет доступность FFmpeg (при необходимости)
 
+#### Ручная настройка окружения
+
+Если PowerShell недоступен, окружение можно создать вручную:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+pip install -r requirements.lock
+```
+
+Файл `requirements.lock` содержит фиксированные версии зависимостей и генерируется утилитой `pip-tools`:
+
+```bash
+pip-compile requirements.txt --output-file requirements.lock
+```
+
 ### Шаг 2: Настройка API ключей
 
 Создайте файл `.env` в корне проекта:
