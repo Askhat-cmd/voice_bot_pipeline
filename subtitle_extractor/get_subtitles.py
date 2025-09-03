@@ -11,13 +11,19 @@ import argparse
 from pathlib import Path
 from typing import List, Dict, Optional
 import re
+import logging
 
 try:
-    from youtube_transcript_api import YouTubeTranscriptApi
+    from youtube_transcript_api import YouTubeTranscriptApi, CouldNotRetrieveTranscript
 except ImportError:
-    print("[ERROR] Ошибка: Не установлена библиотека youtube-transcript-api")
-    print("Установите: pip install youtube-transcript-api")
+    logging.error("[ERROR] Ошибка: Не установлена библиотека youtube-transcript-api")
+    logging.error("Установите: pip install youtube-transcript-api")
     raise
+
+from requests.exceptions import HTTPError
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class YouTubeSubtitlesExtractor:
     """Класс для извлечения субтитров с YouTube"""
@@ -46,37 +52,33 @@ class YouTubeSubtitlesExtractor:
             
         return None
     
-    def get_subtitles(self, video_id: str, language: str = 'ru') -> Optional[List[Dict]]:
+    def get_subtitles(self, video_id: str, language: str = 'ru') -> List[Dict]:
         """Получает субтитры для указанного языка"""
         try:
-            # Создаем экземпляр API
             api = YouTubeTranscriptApi()
-            
-            # Получаем список всех доступных субтитров
             transcript_list = api.list(video_id)
-            
-            # Пытаемся найти субтитры на нужном языке
+        except (CouldNotRetrieveTranscript, HTTPError) as e:
+            logger.error("Ошибка при получении списка субтитров: %s", e)
+            raise
+
+        try:
+            transcript = transcript_list.find_transcript([language])
+            subtitles = transcript.fetch()
+            logger.info("[OK] Получены субтитры на языке: %s", language)
+            return subtitles
+        except (CouldNotRetrieveTranscript, HTTPError) as e:
+            logger.error("Ошибка при получении субтитров: %s", e)
+            raise
+        except Exception:
+            logger.info("[WARNING] Субтитры на языке '%s' не найдены", language)
             try:
-                transcript = transcript_list.find_transcript([language])
+                transcript = transcript_list[0]
                 subtitles = transcript.fetch()
-                print(f"[OK] Получены субтитры на языке: {language}")
+                logger.info("[OK] Получены субтитры на языке: %s", transcript.language_code)
                 return subtitles
-            except:
-                print(f"[WARNING] Субтитры на языке '{language}' не найдены")
-                
-                # Пытаемся получить любые доступные субтитры
-                try:
-                    transcript = transcript_list[0]
-                    subtitles = transcript.fetch()
-                    print(f"[OK] Получены субтитры на языке: {transcript.language_code}")
-                    return subtitles
-                except:
-                    print("[ERROR] Не удалось получить субтитры")
-                    return None
-                    
-        except Exception as e:
-            print(f"[ERROR] Ошибка при получении субтитров: {e}")
-            return None
+            except (CouldNotRetrieveTranscript, HTTPError) as e:
+                logger.error("[ERROR] Не удалось получить субтитры: %s", e)
+                raise
     
     def _seconds_to_srt_time(self, seconds: float) -> str:
         """Конвертирует секунды в формат SRT времени"""
@@ -186,20 +188,20 @@ class YouTubeSubtitlesExtractor:
     
     def process_url(self, url: str, language: str = 'ru') -> bool:
         """Обрабатывает URL и сохраняет субтитры"""
-        print(f"Обрабатываю URL: {url}")
+        logger.info("Обрабатываю URL: %s", url)
         
         video_id = self.extract_video_id(url)
         if not video_id:
-            print("[ERROR] Не удалось извлечь ID видео из URL")
+            logger.error("[ERROR] Не удалось извлечь ID видео из URL")
             return False
         
         subtitles = self.get_subtitles(video_id, language)
         if not subtitles:
-            print("[ERROR] Не удалось получить субтитры")
+            logger.error("[ERROR] Не удалось получить субтитры")
             return False
         
         saved_files = self.save_subtitles(video_id, subtitles)
-        print("[OK] Файлы сохранены:", saved_files)
+        logger.info("[OK] Файлы сохранены: %s", saved_files)
         return True
 
 def main():
@@ -214,7 +216,10 @@ def main():
     
     if args.url:
         ok = extractor.process_url(args.url, args.language)
-        print("[OK] Обработка завершена успешно" if ok else "[ERROR] Обработка завершена с ошибками")
+        if ok:
+            logger.info("[OK] Обработка завершена успешно")
+        else:
+            logger.error("[ERROR] Обработка завершена с ошибками")
         return
 
     urls_path = args.urls_file or str((Path(__file__).resolve().parents[1] / "urls.txt"))
@@ -226,12 +231,12 @@ def main():
             results[url] = extractor.process_url(url, args.language)
         failed = [url for url, ok in results.items() if not ok]
         if failed:
-            print("\n[ERROR] Неудачные URL:")
+            logger.error("\n[ERROR] Неудачные URL:")
             for url in failed:
-                print(f"   - {url}")
+                logger.error("   - %s", url)
         return
 
-    print("[ERROR] Укажите --url или --urls-file (или создайте urls.txt в корне проекта)")
+    logger.error("[ERROR] Укажите --url или --urls-file (или создайте urls.txt в корне проекта)")
     parser.print_help()
 
 if __name__ == "__main__":
