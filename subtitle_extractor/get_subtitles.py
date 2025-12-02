@@ -215,8 +215,8 @@ def main():
     if args.url:
         ok = extractor.process_url(args.url, args.language)
         print("[OK] Обработка завершена успешно" if ok else "[ERROR] Обработка завершена с ошибками")
-        return
-
+            return
+        
     urls_path = args.urls_file or str((Path(__file__).resolve().parents[1] / "urls.txt"))
     if os.path.exists(urls_path):
         with open(urls_path, 'r', encoding='utf-8') as f:
@@ -232,7 +232,7 @@ def main():
         return
 
     print("[ERROR] Укажите --url или --urls-file (или создайте urls.txt в корне проекта)")
-    parser.print_help()
+        parser.print_help()
 
 if __name__ == "__main__":
     main()

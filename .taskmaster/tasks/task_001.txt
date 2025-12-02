@@ -1,0 +1,11 @@
+# Task ID: 1
+# Title: Complete Graph Collection - Add Missing Nodes
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Add the remaining 70 graph nodes to reach the full 442 nodes collection
+# Details:
+Currently we have 372/442 nodes loaded. Need to identify and add the missing 70 nodes to complete the graph collection. This involves analyzing the existing data structure and ensuring all nodes from the neurostalking domain are properly loaded.
+
+# Test Strategy:
+Verify all 442 nodes are loaded and accessible through the graph collection API

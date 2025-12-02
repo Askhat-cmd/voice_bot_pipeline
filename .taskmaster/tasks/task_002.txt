@@ -1,0 +1,11 @@
+# Task ID: 2
+# Title: Complete Graph Collection - Add Missing Relations
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Add the remaining 8 semantic relations to reach the full 259 relations
+# Details:
+Currently we have 251/259 relations loaded. Need to identify and add the missing 8 relations to complete the semantic analysis capabilities. This involves ensuring all conceptual, causal, and practical relationships are properly defined.
+
+# Test Strategy:
+Verify all 259 relations are loaded and semantic analysis works correctly

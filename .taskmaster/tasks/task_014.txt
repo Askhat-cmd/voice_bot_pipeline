@@ -1,0 +1,11 @@
+# Task ID: 14
+# Title: Add Multi-language Support
+# Status: pending
+# Dependencies: 5, 6
+# Priority: low
+# Description: Implement support for English and Kazakh languages
+# Details:
+Extend the system to support processing and searching content in English and Kazakh languages. This should include language detection, appropriate embedding models, and localized interfaces.
+
+# Test Strategy:
+Test with content in different languages and verify accuracy

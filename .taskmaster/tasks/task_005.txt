@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: Create Vector Embeddings for SAG Blocks
+# Status: pending
+# Dependencies: 4
+# Priority: high
+# Description: Generate vector embeddings for all existing SAG v2.0 blocks and implement embedding pipeline
+# Details:
+Process all existing SAG v2.0 blocks to create vector embeddings using a suitable embedding model. Implement a pipeline for automatically generating embeddings for new content as it's processed.
+
+# Test Strategy:
+Verify embeddings are generated correctly and stored in the vector database
