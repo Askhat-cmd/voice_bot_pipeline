@@ -64,6 +64,7 @@ tmp/
 # data/subtitles/
 # data/vector_ready/
 # data/pipeline_results/
+data/chromadb/
 
 # ========================================
 # СИСТЕМНЫЕ ФАЙЛЫ

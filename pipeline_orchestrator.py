@@ -19,6 +19,7 @@ import yaml
 from env_utils import load_env
 from subtitle_extractor.get_subtitles import YouTubeSubtitlesExtractor
 from text_processor.sarsekenov_processor import SarsekenovProcessor
+from vector_db import VectorDBManager, EmbeddingService, VectorIndexer
 
 class PipelineOrchestrator:
     def __init__(self, config_path: str, domain: str = "sarsekenov"):
@@ -38,6 +39,39 @@ class PipelineOrchestrator:
         )
         # Только SarsekenovProcessor для SAG v2.0
         self.text_processor = SarsekenovProcessor()
+        
+        # 5) Vector DB (опционально, если настроено)
+        self.vector_indexer = None
+        if self.config.get('vector_db', {}).get('auto_index', False):
+            try:
+                db_manager = VectorDBManager(
+                    db_path=self.config['vector_db']['db_path'],
+                    collection_prefix=self.config['vector_db']['collection_prefix']
+                )
+                
+                # Настройки rate limiting из config
+                rate_limiting = self.config['vector_db'].get('rate_limiting', {})
+                text_processing = self.config['vector_db'].get('text_processing', {})
+                embedding_service = EmbeddingService(
+                    model=self.config['vector_db']['embedding']['model'],
+                    chunk_size=rate_limiting.get('chunk_size', 2048),
+                    delay_between_requests=rate_limiting.get('delay_between_requests', 15.0),
+                    max_retries=rate_limiting.get('max_retries', 5),
+                    retry_delay=rate_limiting.get('retry_delay', 2.0),
+                    max_retry_delay=rate_limiting.get('max_retry_delay', 60.0),
+                    max_tokens_per_text=text_processing.get('max_tokens_per_text', 8000),
+                    chunk_overlap=text_processing.get('chunk_overlap', 100),
+                    max_workers=rate_limiting.get('max_workers', 1)
+                )
+                self.vector_indexer = VectorIndexer(
+                    db_manager=db_manager,
+                    embedding_service=embedding_service,
+                    batch_size=self.config['vector_db'].get('batch_size', 100)
+                )
+                self.logger.info("✅ Vector DB индексация активирована с rate limiting")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Не удалось инициализировать Vector DB: {e}")
+                self.vector_indexer = None
     
     def _setup_logging(self) -> None:
         log_cfg = self.config['logging']
@@ -142,6 +176,33 @@ class PipelineOrchestrator:
             self.logger.info(f"📁 SAG v2.0 JSON: {text_result['json_output']}")
             self.logger.info(f"📖 Review Markdown: {text_result['md_output']}")
             
+            # Stage 4: Vector DB Indexing (опционально)
+            if self.vector_indexer:
+                self.logger.info("🔍 Stage 4: Indexing to Vector DB")
+                stage4_start = time.time()
+                try:
+                    index_levels = self.config['vector_db'].get('index_levels', ['documents', 'blocks', 'graph_entities'])
+                    index_result = self.vector_indexer.index_sag_file(
+                        Path(text_result['json_output']),
+                        index_levels=index_levels
+                    )
+                    results["stages"]["vector_indexing"] = {
+                        "status": "success" if index_result["success"] else "failed",
+                        "duration": time.time() - stage4_start,
+                        "indexed": index_result["indexed"]
+                    }
+                    if index_result["success"]:
+                        self.logger.info(f"✅ Vector DB индексация завершена: {index_result['indexed']}")
+                    else:
+                        self.logger.warning(f"⚠️ Vector DB индексация завершена с ошибками")
+                except Exception as e:
+                    self.logger.error(f"Ошибка при индексации в Vector DB: {e}", exc_info=True)
+                    results["stages"]["vector_indexing"] = {
+                        "status": "failed",
+                        "duration": time.time() - stage4_start,
+                        "error": str(e)
+                    }
+            
             return results
             
         except Exception as e:
@@ -189,6 +250,7 @@ def main():
     parser.add_argument("--name", help="Custom name for the output files (defaults to video_id)")
     parser.add_argument("--config", required=True, help="Configuration file")
     parser.add_argument("--domain", default="sarsekenov", help="Domain processor (always sarsekenov for SAG v2.0)")
+    parser.add_argument("--index-to-vector-db", action="store_true", help="Index to vector database after processing")
     
     args = parser.parse_args()
     
@@ -200,6 +262,45 @@ def main():
         parser.error("Specify --url or --urls-file (or create urls.txt in project root)")
     
     orchestrator = PipelineOrchestrator(args.config, domain=args.domain)
+    
+    # Включаем индексацию если указан флаг
+    if args.index_to_vector_db:
+        if orchestrator.config.get('vector_db'):
+            orchestrator.config['vector_db']['auto_index'] = True
+            # Переинициализируем векторный индексатор
+            try:
+                from vector_db import VectorDBManager, EmbeddingService, VectorIndexer
+                db_manager = VectorDBManager(
+                    db_path=orchestrator.config['vector_db']['db_path'],
+                    collection_prefix=orchestrator.config['vector_db']['collection_prefix']
+                )
+                
+                # Настройки rate limiting из config
+                rate_limiting = orchestrator.config['vector_db'].get('rate_limiting', {})
+                text_processing = orchestrator.config['vector_db'].get('text_processing', {})
+                embedding_service = EmbeddingService(
+                    model=orchestrator.config['vector_db']['embedding']['model'],
+                    chunk_size=rate_limiting.get('chunk_size', 2048),
+                    delay_between_requests=rate_limiting.get('delay_between_requests', 15.0),
+                    max_retries=rate_limiting.get('max_retries', 5),
+                    retry_delay=rate_limiting.get('retry_delay', 2.0),
+                    max_retry_delay=rate_limiting.get('max_retry_delay', 60.0),
+                    max_tokens_per_text=text_processing.get('max_tokens_per_text', 8000),
+                    chunk_overlap=text_processing.get('chunk_overlap', 100),
+                    max_workers=rate_limiting.get('max_workers', 1)
+                )
+                orchestrator.vector_indexer = VectorIndexer(
+                    db_manager=db_manager,
+                    embedding_service=embedding_service,
+                    batch_size=orchestrator.config['vector_db'].get('batch_size', 100)
+                )
+                orchestrator.logger.info("✅ Vector DB индексация активирована через CLI флаг")
+            except Exception as e:
+                orchestrator.logger.error(f"Ошибка при инициализации Vector DB: {e}")
+                return 1
+        else:
+            orchestrator.logger.error("Vector DB не настроен в config.yaml")
+            return 1
     
     # Check OpenAI API key (still needed for text processing)
     if not os.getenv("OPENAI_API_KEY"):
