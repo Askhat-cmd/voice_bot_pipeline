@@ -6,6 +6,7 @@ Vector Indexer for indexing SAG v2.0 data into ChromaDB
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -278,7 +279,7 @@ class VectorIndexer:
     
     def index_sag_file(self, json_path: Path, index_levels: List[str] = None) -> Dict[str, Any]:
         """
-        Полная индексация SAG v2.0 JSON файла
+        Полная индексация SAG v2.0 JSON файла с мониторингом производительности
         
         Args:
             json_path: Путь к JSON файлу
@@ -290,6 +291,8 @@ class VectorIndexer:
         """
         if index_levels is None:
             index_levels = ["documents", "blocks", "graph_entities"]
+        
+        start_time = time.time()  # ⏱️ Начало отсчета
         
         results = {
             "file": str(json_path),
@@ -306,7 +309,7 @@ class VectorIndexer:
             with open(json_path, 'r', encoding='utf-8') as f:
                 sag_data = json.load(f)
             
-            logger.info(f"📂 Индексация файла: {json_path.name}")
+            logger.info(f"🚀 Начало индексации: {json_path.name}")
             
             # Индексация на разных уровнях
             if "documents" in index_levels:
@@ -322,10 +325,23 @@ class VectorIndexer:
                 results["indexed"]["graph_entities"] = entities_count
             
             results["success"] = True
+            
+            # Подсчет времени и статистики
+            elapsed = time.time() - start_time
+            total_items = sum([
+                results["indexed"]["documents"],
+                results["indexed"]["blocks"],
+                results["indexed"]["graph_entities"]
+            ])
+            
             logger.info(f"✅ Файл проиндексирован: {json_path.name}")
+            logger.info(f"⚡ Индексация завершена за {elapsed:.2f}s "
+                       f"({total_items} элементов, {total_items/elapsed:.1f} эл/сек)" if total_items > 0 else f"⚡ Индексация завершена за {elapsed:.2f}s")
             
         except Exception as e:
+            elapsed = time.time() - start_time
             logger.error(f"Ошибка при индексации файла {json_path}: {e}", exc_info=True)
+            logger.error(f"⏱️ Время до ошибки: {elapsed:.2f}s")
             results["error"] = str(e)
         
         return results

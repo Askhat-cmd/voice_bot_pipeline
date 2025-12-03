@@ -359,7 +359,11 @@ class EmbeddingService:
             logger.warning("Все тексты пустые")
             return [[0.0] * self.embedding_dim] * len(texts)
         
-        logger.info(f"📦 Обработка {len(valid_texts)} текстов (батч-режим, размер батча: {self.chunk_size})...")
+        start_time = time.time()  # ⏱️ Начало отсчета
+        
+        logger.info(f"📦 Обработка {len(valid_texts)} текстов (батч-режим)")
+        logger.info(f"   ⚙️ Конфигурация: chunk_size={self.chunk_size}, "
+                   f"delay={self.delay_between_requests}s, workers={self.max_workers}")
         
         # Разделяем тексты на короткие (для батч-обработки) и длинные (для разбиения)
         short_texts = []  # Тексты, которые можно обработать батчами
@@ -380,7 +384,7 @@ class EmbeddingService:
         
         # Обрабатываем короткие тексты батчами с параллелизмом (оптимизировано!)
         if short_texts:
-            logger.info(f"  📊 Короткие тексты ({len(short_texts)}): обработка батчами (размер: {self.chunk_size}, параллельно: {self.max_workers})...")
+            logger.info(f"  📊 Короткие тексты ({len(short_texts)}): обработка батчами")
             
             # Подготовка батчей
             batches = []
@@ -500,7 +504,9 @@ class EmbeddingService:
                 result.append([0.0] * self.embedding_dim)  # Пустые тексты получают нулевые векторы
         
         processed_count = sum(1 for emb in all_embeddings if emb is not None)
+        elapsed = time.time() - start_time
         logger.info(f"✅ Обработано {processed_count}/{len(valid_texts)} текстов (батчами: {len(short_texts)}, отдельно: {len(long_texts)})")
+        logger.info(f"   ⚡ Обработано за {elapsed:.2f}s ({len(valid_texts)/elapsed:.1f} текстов/сек)" if elapsed > 0 else f"   ⚡ Обработано за {elapsed:.2f}s")
         return result
     
     @property
