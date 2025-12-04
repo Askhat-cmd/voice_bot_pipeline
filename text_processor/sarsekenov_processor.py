@@ -54,6 +54,10 @@ class SarsekenovProcessor:
         self.refine_model = refine_model
         self.client = OpenAI()
         self.encoding = tiktoken.get_encoding("cl100k_base")
+        
+        # Задержка между запросами к OpenAI API (в секундах)
+        # Можно настроить через переменную окружения OPENAI_API_DELAY (по умолчанию 1.0 секунда)
+        self.api_delay = float(os.getenv("OPENAI_API_DELAY", "1.0"))
 
         # Доменные указания для более точной обработки речи Сарсекенова
         self.domain_context = (
@@ -310,6 +314,11 @@ class SarsekenovProcessor:
         return len(self.encoding.encode(text))
 
     def _ask(self, model: str, prompt: str, max_tokens: int = 2200, temperature: float = 0.3) -> str:
+        # Задержка перед запросом для избежания rate limit (429 ошибок)
+        # OpenAI API имеет лимиты: 3000 RPM для gpt-4o-mini
+        # Настраивается через переменную окружения OPENAI_API_DELAY (по умолчанию 1.0 секунда)
+        time.sleep(self.api_delay)
+        
         r = self.client.chat.completions.create(
             model=model,
             messages=[
@@ -1473,7 +1482,8 @@ class SarsekenovProcessor:
             print(f"[INFO] Processing chunk {i}/{len(chunks)}")
             blocks = self.process_chunk(ch)
             all_blocks.extend(blocks)
-            time.sleep(0.4)
+            # Задержка уже есть в методе _ask перед каждым запросом к API
+            # Дополнительная задержка не нужна
 
         if self.refine_model:
             all_blocks = self.refine_blocks(all_blocks)
