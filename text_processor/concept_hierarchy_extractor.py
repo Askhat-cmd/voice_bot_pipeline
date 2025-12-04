@@ -95,3 +95,4 @@ class ConceptHierarchyExtractor:
         data.setdefault("concepts", [])
         return data
 
+

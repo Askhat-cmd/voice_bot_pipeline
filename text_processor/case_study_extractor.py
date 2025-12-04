@@ -87,3 +87,4 @@ class CaseStudyExtractor:
         data.setdefault("case_studies", [])
         return data
 
+

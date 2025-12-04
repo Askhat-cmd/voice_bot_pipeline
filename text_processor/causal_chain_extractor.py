@@ -101,3 +101,4 @@ class CausalChainExtractor:
         data.setdefault("processes", [])
         return data
 
+

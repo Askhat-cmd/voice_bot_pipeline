@@ -100,3 +100,4 @@ class SafetyInformationExtractor:
 
         return data
 
+
