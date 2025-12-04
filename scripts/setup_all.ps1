@@ -38,10 +38,9 @@ try {
 
 # Create main directory structure
 $directories = @(
-    "data/raw_audio",
-    "data/transcripts", 
-    "data/structured",
-    "data/vector_ready"
+    "data/raw_subtitles",
+    "data/sag_final",
+    "data/chromadb"
 )
 
 foreach ($dir in $directories) {
@@ -90,4 +89,4 @@ Write-Host "1. Set OpenAI API key: `$env:OPENAI_API_KEY = 'your-key-here'"
 Write-Host "2. Activate environment: .\.venv\Scripts\Activate.ps1"
 Write-Host "3. Single video: python pipeline_orchestrator.py --url 'https://youtube.com/...'"
 Write-Host "4. Batch process: python pipeline_orchestrator.py --urls-file sample_urls.txt"
-Write-Host "5. Check results in data/structured/ folder"
+Write-Host "5. Check results in data/sag_final/ folder"

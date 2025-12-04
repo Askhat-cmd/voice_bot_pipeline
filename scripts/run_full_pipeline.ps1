@@ -4,7 +4,6 @@ param(
     [string]$Url,
     
     [string]$Name = "",
-    [switch]$FromStart = $false,
     [switch]$SkipSetup = $false
 )
 
@@ -31,15 +30,12 @@ Write-Host "[INFO] Activating virtual environment..."
 & .\.venv\Scripts\Activate.ps1
 
 # Build command
-$cmd = "python pipeline_orchestrator.py --url `"$Url`""
+$cmd = "python pipeline_orchestrator.py --url `"$Url`" --config config.yaml"
 if ($Name) {
     $cmd += " --name `"$Name`""
-}
-if ($FromStart) {
-    $cmd += " --from-start"
 }
 
 Write-Host "[INFO] Running: $cmd"
 Invoke-Expression $cmd
 
-Write-Host "`n[INFO] Pipeline complete! Check data/structured/ for results."
+Write-Host "`n[INFO] Pipeline complete! Check data/sag_final/ for SAG v2.0 results."

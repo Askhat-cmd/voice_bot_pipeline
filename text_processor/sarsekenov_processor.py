@@ -2072,7 +2072,7 @@ class SarsekenovProcessor:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Процессор лекций С. Сарсекенова")
     ap.add_argument("--input", help="Файл или директория с субтитрами (.json). Если не указано, будет использован urls.txt")
-    ap.add_argument("--output", default="data/vector_ready", help="Директория для результатов")
+    ap.add_argument("--output", default="data/sag_final", help="Директория для результатов SAG v2.0")
     ap.add_argument("--primary-model", default="gpt-4o-mini", help="Основная модель для нарезки")
     ap.add_argument("--refine-model", default="gpt-5-mini", help="Модель для полировки")
     ap.add_argument("--urls-file", default=str(PROJECT_ROOT / "urls.txt"), help="Файл со списком URL (по одному на строку)")

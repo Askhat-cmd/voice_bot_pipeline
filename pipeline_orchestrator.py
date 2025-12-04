@@ -57,7 +57,7 @@ class PipelineOrchestrator:
                     embedding_service=embedding_service,
                     batch_size=self.config['vector_db'].get('batch_size', 100)
                 )
-                self.logger.info("✅ Vector DB индексация активирована с rate limiting")
+                self.logger.info("✅ Vector DB индексация активирована")
             except Exception as e:
                 self.logger.warning(f"⚠️ Не удалось инициализировать Vector DB: {e}")
                 self.vector_indexer = None

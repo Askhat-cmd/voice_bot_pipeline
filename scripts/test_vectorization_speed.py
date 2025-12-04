@@ -158,8 +158,8 @@ def test_vectorization_speed():
     logger.info(f"\n💡 РЕКОМЕНДАЦИИ:")
     if elapsed > 10:
         logger.info(f"   1. Проверьте использование батч-обработки в vector_indexer.py")
-        logger.info(f"   2. Уменьшите delay_between_requests до 0.5s в config.yaml")
-        logger.info(f"   3. Увеличьте max_workers до 3 в config.yaml")
+        logger.info(f"   2. Убедитесь, что используется GPU (CUDA) для ускорения обработки")
+        logger.info(f"   3. Проверьте размер батча в config.yaml (batch_size)")
     else:
         logger.info(f"   ✅ Система работает оптимально!")
 

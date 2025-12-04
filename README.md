@@ -420,14 +420,15 @@ voice_bot_pipeline/
 │       └── 🔧 setup_tp.ps1
 │
 ├── 📁 data/                    # Данные проекта
-│   ├── 📁 subtitles/           # Загруженные субтитры
+│   ├── 📁 raw_subtitles/       # Сырые субтитры и логи пайплайна
 │   │   ├── 📄 VIDEO_ID.json    # Структурированные данные
 │   │   ├── 📄 VIDEO_ID.srt     # Стандартные субтитры
-│   │   └── 📄 VIDEO_ID.txt     # Чистый текст
-│   ├── 📁 vector_ready/        # Готовые для векторизации
+│   │   ├── 📄 VIDEO_ID.txt     # Чистый текст
+│   │   └── 📄 batch_pipeline_results_*.json # Логи пакетной обработки
+│   ├── 📁 sag_final/           # Финальные SAG v2.0 данные
 │   │   ├── 📄 *.for_vector.json # Для векторной БД
 │   │   └── 📄 *.for_review.md   # Для человеческого просмотра
-│   └── 📁 pipeline_results/    # Логи выполнения
+│   └── 📁 chromadb/            # Векторная база данных ChromaDB
 │
 ├── 📁 scripts/                 # Скрипты управления
 │   ├── 🔧 setup_all.ps1        # Полная настройка окружения
@@ -589,15 +590,15 @@ pipeline:
   
   # Настройки извлечения субтитров
   subtitles:
-    output_dir: "data/subtitles"
+    output_dir: "data/raw_subtitles"
     language: "ru"         # Предпочитаемый язык
     
-  # Настройки обработки текста  
+  # Настройки обработки текста (SAG v2.0)
   text_processing:
-    output_dir: "data/vector_ready"
+    output_dir: "data/sag_final"
     
   # Папка для результатов выполнения
-  results_dir: "data/pipeline_results"
+  results_dir: "data/sag_final"
 ```
 
 ### Переменные окружения (.env) - подробно
@@ -1066,11 +1067,11 @@ for result in successful:
 ```
 2025-01-28 15:30:15,123 | INFO | pipeline | Starting pipeline for: https://youtu.be/VIDEO_ID
 2025-01-28 15:30:15,124 | INFO | pipeline | Stage 1: Downloading subtitles from YouTube
-2025-01-28 15:30:17,456 | INFO | pipeline | Stage 1 complete: data\subtitles\VIDEO_ID.json
-2025-01-28 15:30:17,457 | INFO | pipeline | Stage 2: Processing text for vector database
-2025-01-28 15:30:45,123 | INFO | pipeline | Stage 2 complete: 8 blocks created
+2025-01-28 15:30:17,456 | INFO | pipeline | Stage 1 complete: data\raw_subtitles\VIDEO_ID.json
+2025-01-28 15:30:17,457 | INFO | pipeline | Stage 2: Processing text for SAG v2.0
+2025-01-28 15:30:45,123 | INFO | pipeline | Stage 2 complete: 8 SAG v2.0 blocks created
 2025-01-28 15:30:45,124 | INFO | pipeline | Pipeline complete! Total time: 30.0s
-2025-01-28 15:30:45,125 | INFO | pipeline | Vector-ready JSON: data\vector_ready\VIDEO_ID.for_vector.json
+2025-01-28 15:30:45,125 | INFO | pipeline | SAG v2.0 JSON: data\sag_final\VIDEO_ID.for_vector.json
 ```
 
 #### 🆕 **SAG v2.0 Логи с расширенной информацией**
@@ -1086,7 +1087,7 @@ for result in successful:
 2025-01-28 15:30:45,125 | INFO | sarsekenov_processor | SAG v2.0 complete: 90% readiness score
 ```
 
-#### Результаты выполнения: `data/pipeline_results/`
+#### Результаты выполнения: `data/raw_subtitles/`
 
 **Одиночный запуск**: `pipeline_result_YYYYMMDD_HHMMSS.json`
 ```json
@@ -1100,7 +1101,7 @@ for result in successful:
     "subtitles": {
       "status": "success",
       "duration": 2.3,
-      "json_path": "data\\subtitles\\VIDEO_ID.json"
+      "json_path": "data\\raw_subtitles\\VIDEO_ID.json"
     },
     "text_processing": {
       "status": "success",
@@ -1127,8 +1128,8 @@ for result in successful:
     }
   },
   "final_outputs": {
-    "vector_json": "data\\vector_ready\\VIDEO_ID.for_vector.json",
-    "review_markdown": "data\\vector_ready\\VIDEO_ID.for_review.md"
+    "sag_v2_json": "data\\sag_final\\VIDEO_ID.for_vector.json",
+    "review_markdown": "data\\sag_final\\VIDEO_ID.for_review.md"
   }
 }
 ```
@@ -1188,7 +1189,7 @@ python -c "
 import json
 from pathlib import Path
 
-for f in Path('data/vector_ready').glob('*.for_vector.json'):
+for f in Path('data/sag_final').glob('*.for_vector.json'):
     with open(f) as file:
         data = json.load(file)
     blocks = data['blocks']
@@ -1306,7 +1307,7 @@ class VectorIndexer:
 # Использование
 indexer = VectorIndexer()
 indexer.create_collection("sarsekenov_lectures")
-indexer.index_document("data/vector_ready/VIDEO_ID.for_vector.json", "sarsekenov_lectures")
+indexer.index_document("data/sag_final/VIDEO_ID.for_vector.json", "sarsekenov_lectures")
 ```
 
 ### Интеграция с Neo4j (граф знаний)
@@ -1401,7 +1402,7 @@ class GraphBuilder:
 
 # Использование
 graph = GraphBuilder("bolt://localhost:7687", "neo4j", "password")
-graph.create_graph_from_document("data/vector_ready/VIDEO_ID.for_vector.json")
+graph.create_graph_from_document("data/sag_final/VIDEO_ID.for_vector.json")
 ```
 
 ---
@@ -1595,7 +1596,7 @@ Select-String "ERROR" pipeline.log | Select-Object -Last 10
 Select-String "Pipeline complete" pipeline.log | Measure-Object
 
 # Проверка размеров результатов
-Get-ChildItem data\vector_ready\*.json | Select-Object Name, Length | Sort-Object Length
+Get-ChildItem data\sag_final\*.json | Select-Object Name, Length | Sort-Object Length
 ```
 
 ---
@@ -2056,8 +2057,6 @@ db_manager.delete_collection("documents")
 ```bash
 python scripts/test_vectorization_speed.py
 ```
-
-Подробности: [VECTORIZATION_OPTIMIZATION.md](VECTORIZATION_OPTIMIZATION.md)
 
 ### **Мониторинг**
 
