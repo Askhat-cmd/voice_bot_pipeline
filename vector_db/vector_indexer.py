@@ -140,6 +140,13 @@ class VectorIndexer:
                 block_ids.append(block_id)
                 
                 # Подготовка метаданных
+                safety = block.get("safety", {})
+                has_safety_warnings = bool(
+                    safety.get("contraindications") or 
+                    safety.get("when_to_stop") or
+                    safety.get("when_to_seek_professional_help")
+                )
+                
                 metadata = {
                     "block_id": block_id,
                     "video_id": video_id,
@@ -153,6 +160,12 @@ class VectorIndexer:
                     "collection_target": sag_data.get("document_metadata", {}).get("collection_target", ""),
                     "youtube_link": block.get("youtube_link", ""),
                     "graph_entities": ", ".join(block.get("graph_entities", [])[:10]),  # Первые 10 для метаданных
+                    # Новые флаги для экстракторов SAG v2.0
+                    "has_safety_warnings": str(has_safety_warnings),
+                    "has_causal_chains": str(bool(block.get("causal_chains"))),
+                    "has_case_studies": str(bool(block.get("case_studies"))),
+                    "has_prerequisites": str(bool(block.get("prerequisites", {}).get("prerequisites"))),
+                    "has_concept_hierarchy": str(bool(block.get("concept_hierarchy"))),
                 }
                 metadatas_list.append(metadata)
             

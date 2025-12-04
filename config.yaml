@@ -17,6 +17,20 @@ pipeline:
   text_processing:
     output_dir: "data/sag_final"  # Прямо в финальную папку SAG v2.0
 
+  # SAG v2.0 extractors configuration
+  sag_v2:
+    use_safety_extractor: true
+    use_causal_chain_extractor: true
+    use_concept_hierarchy_extractor: true
+    use_case_study_extractor: true
+    use_prerequisite_extractor: true
+    models:
+      safety: gpt-4o-mini
+      causal: gpt-4o-mini
+      hierarchy: gpt-4o-mini
+      case_study: gpt-4o-mini
+      prerequisite: gpt-4o-mini
+
   # Directory for pipeline run results and logs
   results_dir: "data/sag_final"  # Результаты тоже в SAG v2.0
 

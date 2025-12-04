@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional
 
 import orjson
 import tiktoken
+import yaml
 from openai import OpenAI
 
 """
@@ -31,6 +32,11 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from env_utils import load_env
 from subtitle_extractor.get_subtitles import YouTubeSubtitlesExtractor
+from .safety_extractor import SafetyInformationExtractor
+from .causal_chain_extractor import CausalChainExtractor
+from .concept_hierarchy_extractor import ConceptHierarchyExtractor
+from .case_study_extractor import CaseStudyExtractor
+from .prerequisite_extractor import PrerequisiteExtractor
 
 
 def _hms(seconds: Optional[float]) -> Optional[str]:
@@ -58,6 +64,38 @@ class SarsekenovProcessor:
         # Задержка между запросами к OpenAI API (в секундах)
         # Можно настроить через переменную окружения OPENAI_API_DELAY (по умолчанию 1.0 секунда)
         self.api_delay = float(os.getenv("OPENAI_API_DELAY", "1.0"))
+
+        # Загрузка конфигурации для экстракторов
+        self.config = self._load_config()
+        
+        # Инициализация экстракторов SAG v2.0
+        sag_config = self.config.get('pipeline', {}).get('sag_v2', {})
+        models_config = sag_config.get('models', {})
+        
+        self.safety_extractor = SafetyInformationExtractor(
+            client=self.client,
+            model=models_config.get('safety', 'gpt-4o-mini')
+        ) if sag_config.get('use_safety_extractor', True) else None
+        
+        self.causal_extractor = CausalChainExtractor(
+            client=self.client,
+            model=models_config.get('causal', 'gpt-4o-mini')
+        ) if sag_config.get('use_causal_chain_extractor', True) else None
+        
+        self.hierarchy_extractor = ConceptHierarchyExtractor(
+            client=self.client,
+            model=models_config.get('hierarchy', 'gpt-4o-mini')
+        ) if sag_config.get('use_concept_hierarchy_extractor', True) else None
+        
+        self.case_extractor = CaseStudyExtractor(
+            client=self.client,
+            model=models_config.get('case_study', 'gpt-4o-mini')
+        ) if sag_config.get('use_case_study_extractor', True) else None
+        
+        self.prereq_extractor = PrerequisiteExtractor(
+            client=self.client,
+            model=models_config.get('prerequisite', 'gpt-4o-mini')
+        ) if sag_config.get('use_prerequisite_extractor', True) else None
 
         # Доменные указания для более точной обработки речи Сарсекенова
         self.domain_context = (
@@ -1271,6 +1309,54 @@ class SarsekenovProcessor:
             return None
 
     # ---------------------- IO ---------------------- #
+    def _load_config(self) -> dict:
+        """Загружает конфигурацию из config.yaml"""
+        config_path = PROJECT_ROOT / "config.yaml"
+        if config_path.exists():
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    return yaml.safe_load(f) or {}
+            except Exception:
+                # Если не удалось загрузить, возвращаем пустой словарь с дефолтными значениями
+                return {
+                    'pipeline': {
+                        'sag_v2': {
+                            'use_safety_extractor': True,
+                            'use_causal_chain_extractor': True,
+                            'use_concept_hierarchy_extractor': True,
+                            'use_case_study_extractor': True,
+                            'use_prerequisite_extractor': True,
+                            'models': {
+                                'safety': 'gpt-4o-mini',
+                                'causal': 'gpt-4o-mini',
+                                'hierarchy': 'gpt-4o-mini',
+                                'case_study': 'gpt-4o-mini',
+                                'prerequisite': 'gpt-4o-mini'
+                            }
+                        }
+                    }
+                }
+        else:
+            # Если файл не существует, возвращаем дефолтные значения
+            return {
+                'pipeline': {
+                    'sag_v2': {
+                        'use_safety_extractor': True,
+                        'use_causal_chain_extractor': True,
+                        'use_concept_hierarchy_extractor': True,
+                        'use_case_study_extractor': True,
+                        'use_prerequisite_extractor': True,
+                        'models': {
+                            'safety': 'gpt-4o-mini',
+                            'causal': 'gpt-4o-mini',
+                            'hierarchy': 'gpt-4o-mini',
+                            'case_study': 'gpt-4o-mini',
+                            'prerequisite': 'gpt-4o-mini'
+                        }
+                    }
+                }
+            }
+
     def load_input(self, file_path: Path) -> Dict[str, Any]:
         """Поддержка входа из get_subtitles.json формата и универсальных транскриптов."""
         with open(file_path, "r", encoding="utf-8") as f:
@@ -1543,6 +1629,75 @@ class SarsekenovProcessor:
                     block["interaction_quality"] = dialogue_data.get("interaction_quality")
                     block["dialogue_turn"] = 1  # Первый ход диалога
                     # Дополнительные диалоговые метаданные можно добавить при необходимости
+            
+            # 🚀 НОВЫЕ ЭКСТРАКТОРЫ SAG v2.0 (если включены в конфиге)
+            sag_config = self.config.get('pipeline', {}).get('sag_v2', {})
+            
+            if self.safety_extractor and sag_config.get('use_safety_extractor', True):
+                try:
+                    safety_info = self.safety_extractor.extract(
+                        block_content=block["content"],
+                        practice_or_concept_name=block.get("title", "не указано")
+                    )
+                    block["safety"] = safety_info
+                    if safety_info.get("contraindications") or safety_info.get("when_to_stop"):
+                        print(f"[INFO] Блок {i+1}: найдены safety-предупреждения")
+                except Exception as e:
+                    print(f"[WARNING] Ошибка при извлечении safety-информации для блока {i+1}: {e}")
+                    block["safety"] = {
+                        "contraindications": [],
+                        "limitations": [],
+                        "when_to_stop": [],
+                        "when_to_seek_professional_help": [],
+                        "notes": []
+                    }
+            
+            if self.causal_extractor and sag_config.get('use_causal_chain_extractor', True):
+                try:
+                    causal_data = self.causal_extractor.extract(block_content=block["content"])
+                    block["causal_chains"] = causal_data.get("processes", [])
+                    if block["causal_chains"]:
+                        print(f"[INFO] Блок {i+1}: найдено {len(block['causal_chains'])} причинно-следственных процессов")
+                except Exception as e:
+                    print(f"[WARNING] Ошибка при извлечении причинно-следственных цепочек для блока {i+1}: {e}")
+                    block["causal_chains"] = []
+            
+            if self.hierarchy_extractor and sag_config.get('use_concept_hierarchy_extractor', True):
+                try:
+                    hierarchy_data = self.hierarchy_extractor.extract(
+                        block_content=block["content"],
+                        known_entities=block.get("graph_entities", [])
+                    )
+                    block["concept_hierarchy"] = hierarchy_data.get("concepts", [])
+                    if block["concept_hierarchy"]:
+                        print(f"[INFO] Блок {i+1}: найдено {len(block['concept_hierarchy'])} концептов в иерархии")
+                except Exception as e:
+                    print(f"[WARNING] Ошибка при извлечении иерархии концептов для блока {i+1}: {e}")
+                    block["concept_hierarchy"] = []
+            
+            if self.case_extractor and sag_config.get('use_case_study_extractor', True):
+                try:
+                    case_data = self.case_extractor.extract(block_content=block["content"])
+                    block["case_studies"] = case_data.get("case_studies", [])
+                    if block["case_studies"]:
+                        print(f"[INFO] Блок {i+1}: найдено {len(block['case_studies'])} кейсов")
+                except Exception as e:
+                    print(f"[WARNING] Ошибка при извлечении кейсов для блока {i+1}: {e}")
+                    block["case_studies"] = []
+            
+            if self.prereq_extractor and sag_config.get('use_prerequisite_extractor', True):
+                try:
+                    prereq_data = self.prereq_extractor.extract(block_content=block["content"])
+                    block["prerequisites"] = prereq_data
+                    if prereq_data.get("prerequisites") or prereq_data.get("recommended_sequence"):
+                        print(f"[INFO] Блок {i+1}: найдены предпосылки и последовательность обучения")
+                except Exception as e:
+                    print(f"[WARNING] Ошибка при извлечении предпосылок для блока {i+1}: {e}")
+                    block["prerequisites"] = {
+                        "prerequisites": [],
+                        "recommended_sequence": [],
+                        "common_mistakes": []
+                    }
         
         doc = {
             "document_title": f"Лекция Сарсекенова: {base}",
@@ -1940,6 +2095,62 @@ class SarsekenovProcessor:
             for field in required_block_fields:
                 if field not in block:
                     errors.append(f"Блок {i}: отсутствует поле SAG v2.0: {field}")
+            
+            # Проверяем новые поля экстракторов SAG v2.0
+            if "safety" in block:
+                safety = block["safety"]
+                if not isinstance(safety, dict):
+                    errors.append(f"Блок {i}: поле 'safety' должно быть словарем")
+                else:
+                    required_safety_keys = ["contraindications", "limitations", "when_to_stop", 
+                                           "when_to_seek_professional_help", "notes"]
+                    for key in required_safety_keys:
+                        if key not in safety:
+                            errors.append(f"Блок {i}: отсутствует ключ 'safety.{key}'")
+                        elif not isinstance(safety[key], list):
+                            errors.append(f"Блок {i}: 'safety.{key}' должен быть списком")
+            
+            if "causal_chains" in block:
+                if not isinstance(block["causal_chains"], list):
+                    errors.append(f"Блок {i}: поле 'causal_chains' должно быть списком")
+                else:
+                    for j, process in enumerate(block["causal_chains"]):
+                        if not isinstance(process, dict):
+                            errors.append(f"Блок {i}, процесс {j}: должен быть словарем")
+                        elif "name" not in process or "steps" not in process:
+                            errors.append(f"Блок {i}, процесс {j}: отсутствуют обязательные поля 'name' или 'steps'")
+            
+            if "concept_hierarchy" in block:
+                if not isinstance(block["concept_hierarchy"], list):
+                    errors.append(f"Блок {i}: поле 'concept_hierarchy' должно быть списком")
+                else:
+                    for j, concept in enumerate(block["concept_hierarchy"]):
+                        if not isinstance(concept, dict):
+                            errors.append(f"Блок {i}, концепт {j}: должен быть словарем")
+                        elif "name" not in concept or "level" not in concept:
+                            errors.append(f"Блок {i}, концепт {j}: отсутствуют обязательные поля 'name' или 'level'")
+            
+            if "case_studies" in block:
+                if not isinstance(block["case_studies"], list):
+                    errors.append(f"Блок {i}: поле 'case_studies' должно быть списком")
+                else:
+                    for j, case in enumerate(block["case_studies"]):
+                        if not isinstance(case, dict):
+                            errors.append(f"Блок {i}, кейс {j}: должен быть словарем")
+                        elif "id" not in case or "situation" not in case:
+                            errors.append(f"Блок {i}, кейс {j}: отсутствуют обязательные поля 'id' или 'situation'")
+            
+            if "prerequisites" in block:
+                prereq = block["prerequisites"]
+                if not isinstance(prereq, dict):
+                    errors.append(f"Блок {i}: поле 'prerequisites' должно быть словарем")
+                else:
+                    required_prereq_keys = ["prerequisites", "recommended_sequence", "common_mistakes"]
+                    for key in required_prereq_keys:
+                        if key not in prereq:
+                            errors.append(f"Блок {i}: отсутствует ключ 'prerequisites.{key}'")
+                        elif not isinstance(prereq[key], list):
+                            errors.append(f"Блок {i}: 'prerequisites.{key}' должен быть списком")
             
             # Проверяем типы данных
             if "complexity_score" in block:

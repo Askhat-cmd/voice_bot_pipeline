@@ -1,0 +1,49 @@
+[
+  {
+    "youtube_url": "https://youtu.be/tHrRgOw8CU0?si=jcwALvej1YS_T0od",
+    "custom_name": null,
+    "pipeline_start": "2025-12-04 16:25:22",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.2868108749389648,
+        "json_path": "data\\raw_subtitles\\2025\\07\\2025-07-17_tHrRgOw8CU0_Где_ум_там_и_клад.json",
+        "srt_path": "data\\raw_subtitles\\2025\\07\\2025-07-17_tHrRgOw8CU0_Где_ум_там_и_клад.srt",
+        "txt_path": "data\\raw_subtitles\\2025\\07\\2025-07-17_tHrRgOw8CU0_Где_ум_там_и_клад.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 209.09228134155273,
+        "sag_v2_output": "data\\sag_final\\2025\\07\\2025-07-17_tHrRgOw8CU0_Где_ум_там_и_клад.for_vector.json",
+        "review_markdown": "data\\sag_final\\2025\\07\\2025-07-17_tHrRgOw8CU0_Где_ум_там_и_клад.for_review.md",
+        "blocks_created": 5,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 1.6030237674713135,
+        "indexed": {
+          "documents": 1,
+          "blocks": 5,
+          "graph_entities": 20
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "tHrRgOw8CU0",
+    "total_duration": 211.0515947341919,
+    "pipeline_end": "2025-12-04 16:28:53",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2025\\07\\2025-07-17_tHrRgOw8CU0_Где_ум_там_и_клад.for_vector.json",
+      "review_markdown": "data\\sag_final\\2025\\07\\2025-07-17_tHrRgOw8CU0_Где_ум_там_и_клад.for_review.md"
+    },
+    "blocks_created": 5,
+    "entities_extracted": 33
+  }
+]
