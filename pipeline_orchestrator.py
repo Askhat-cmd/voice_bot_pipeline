@@ -20,6 +20,10 @@ from env_utils import load_env
 from subtitle_extractor.get_subtitles import YouTubeSubtitlesExtractor
 from text_processor.sarsekenov_processor import SarsekenovProcessor
 from vector_db import VectorDBManager, EmbeddingService, VectorIndexer
+from utils.video_registry import VideoRegistry, VideoMetadata, ProcessingRecord
+from utils.youtube_metadata_fetcher import YouTubeAPIMetadataFetcher
+from utils.file_utils import create_filename, get_date_paths
+from datetime import datetime
 
 class PipelineOrchestrator:
     def __init__(self, config_path: str, domain: str = "sarsekenov"):
@@ -33,6 +37,12 @@ class PipelineOrchestrator:
         self._setup_logging()
         self.logger = logging.getLogger("pipeline")
         self._setup_dirs()
+        
+        # 3.5) Video Registry и Metadata Fetcher
+        registry_path = self.config.get('pipeline', {}).get('registry_path', 'data/video_registry.json')
+        self.registry = VideoRegistry(registry_path)
+        self.metadata_fetcher = YouTubeAPIMetadataFetcher()
+        
         # 4) stages - только SAG v2.0
         self.subtitle_extractor = YouTubeSubtitlesExtractor(
             output_dir=self.config['pipeline']['subtitles']['output_dir']
@@ -95,21 +105,76 @@ class PipelineOrchestrator:
         
         self.logger.info(f"🚀 Starting SAG v2.0 pipeline for: {youtube_url}")
         
+        video_id = None
+        video_metadata = None
+        
         try:
-            # Stage 1: Get Subtitles (временная папка)
-            self.logger.info("📥 Stage 1: Downloading subtitles from YouTube")
-            stage1_start = time.time()
-            
+            # Pre-stage: Extract video ID and check for duplicates
+            self.logger.info("🔍 Pre-stage: Extracting video ID and checking registry")
             video_id = self.subtitle_extractor.extract_video_id(youtube_url)
             if not video_id:
                 raise ValueError(f"Could not extract video_id from URL: {youtube_url}")
-
+            
+            # Проверка дубликатов
+            if self.registry.is_processed(video_id):
+                self.logger.info(f"⏭️  Пропуск {video_id}: уже обработано")
+                return {
+                    "status": "skipped",
+                    "reason": "already_processed",
+                    "video_id": video_id,
+                    "youtube_url": youtube_url
+                }
+            
+            # Получение метаданных через YouTube API
+            self.logger.info(f"📥 Получение метаданных для {video_id}...")
+            try:
+                metadata_dict = self.metadata_fetcher.fetch_metadata(youtube_url)
+                video_metadata = VideoMetadata(**metadata_dict)
+                
+                # Добавляем в реестр, если еще нет
+                if not self.registry.video_exists(video_id):
+                    self.registry.add_video(video_metadata)
+                else:
+                    # Обновляем метаданные если они изменились
+                    video_metadata = VideoMetadata(**metadata_dict)
+                    self.registry.update_status(video_id, "pending")
+                
+                self.logger.info(f"✅ Метаданные получены: {video_metadata.title}")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Ошибка получения метаданных: {e}. Используем базовые значения.")
+                # Создаем базовые метаданные
+                video_metadata = VideoMetadata(
+                    video_id=video_id,
+                    title=f"Video {video_id}",
+                    channel="Unknown",
+                    published_date=datetime.now().isoformat(),
+                    duration_seconds=0,
+                    url=youtube_url
+                )
+                if not self.registry.video_exists(video_id):
+                    self.registry.add_video(video_metadata)
+            
+            # Обновляем статус на "processing"
+            self.registry.update_status(video_id, "processing")
+            
+            # Stage 1: Get Subtitles
+            self.logger.info("📥 Stage 1: Downloading subtitles from YouTube")
+            stage1_start = time.time()
+            
             subtitles = self.subtitle_extractor.get_subtitles(video_id)
             if not subtitles:
                 raise RuntimeError(f"Failed to retrieve subtitles for video_id: {video_id}")
 
-            filename_id = custom_name if custom_name else video_id
-            saved_files = self.subtitle_extractor.save_subtitles(filename_id, subtitles)
+            # Сохраняем субтитры с новыми именами (если есть метаданные)
+            if video_metadata:
+                saved_files = self.subtitle_extractor.save_subtitles(
+                    video_id, 
+                    subtitles,
+                    title=video_metadata.title,
+                    published_date=video_metadata.published_date
+                )
+            else:
+                saved_files = self.subtitle_extractor.save_subtitles(video_id, subtitles)
 
             results["stages"]["subtitles"] = {
                 "status": "success",
@@ -120,17 +185,59 @@ class PipelineOrchestrator:
             }
             self.logger.info(f"Stage 1 complete: {saved_files['json']}")
             
+            # Сохраняем путь к файлу субтитров в реестре
+            if video_metadata:
+                self.registry.set_file_path(video_id, "raw_subtitles", saved_files["json"])
+            
             # Stage 2: Text Processing (SAG v2.0)
             self.logger.info("📝 Stage 2: Processing text for SAG v2.0")
             stage2_start = time.time()
             
             transcript_path = Path(saved_files["json"])
-            output_dir = Path(self.config['pipeline']['text_processing']['output_dir'])
+            
+            # Определяем output_dir с учетом дат (если есть метаданные)
+            if video_metadata:
+                base_output_dir = Path(self.config['pipeline']['text_processing']['output_dir'])
+                output_dir, year, month = get_date_paths(base_output_dir, video_metadata.published_date)
+                output_dir.mkdir(parents=True, exist_ok=True)
+            else:
+                output_dir = Path(self.config['pipeline']['text_processing']['output_dir'])
             
             # Прямая обработка в SAG v2.0
             text_result = self.text_processor.process_subtitles_file(
                 transcript_path, output_dir
             )
+            
+            # Если есть метаданные, переименовываем файлы с датами и названиями
+            if video_metadata:
+                try:
+                    # Переименовываем SAG JSON файл
+                    old_json_path = Path(text_result["json_output"])
+                    new_json_filename = create_filename(
+                        video_id, 
+                        video_metadata.title, 
+                        video_metadata.published_date, 
+                        ext="for_vector.json"
+                    )
+                    new_json_path = output_dir / new_json_filename
+                    if old_json_path.exists() and old_json_path != new_json_path:
+                        old_json_path.rename(new_json_path)
+                        text_result["json_output"] = str(new_json_path)
+                    
+                    # Переименовываем MD файл
+                    old_md_path = Path(text_result["md_output"])
+                    new_md_filename = create_filename(
+                        video_id,
+                        video_metadata.title,
+                        video_metadata.published_date,
+                        ext="for_review.md"
+                    )
+                    new_md_path = output_dir / new_md_filename
+                    if old_md_path.exists() and old_md_path != new_md_path:
+                        old_md_path.rename(new_md_path)
+                        text_result["md_output"] = str(new_md_path)
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Не удалось переименовать файлы: {e}")
             
             results["stages"]["text_processing"] = {
                 "status": "success", 
@@ -151,14 +258,49 @@ class PipelineOrchestrator:
             
             # Pipeline Summary
             total_duration = time.time() - pipeline_start
+            
+            # Подсчитываем количество сущностей из SAG результата
+            entities_count = 0
+            blocks_count = text_result.get("blocks_created", 0)
+            try:
+                with open(text_result["json_output"], 'r', encoding='utf-8') as f:
+                    sag_data = json.load(f)
+                    for block in sag_data.get("blocks", []):
+                        entities_count += len(block.get("graph_entities", []))
+            except:
+                pass
+            
+            # Оценка стоимости API (упрощенная)
+            api_cost_estimate = blocks_count * 0.01  # Примерная оценка
+            
+            # Сохраняем пути к файлам в реестре
+            if video_metadata:
+                self.registry.set_file_path(video_id, "sag_json", text_result["json_output"])
+                self.registry.set_file_path(video_id, "sag_md", text_result["md_output"])
+            
+            # Создаем запись об обработке
+            processing_record = ProcessingRecord(
+                processed_at=datetime.now().isoformat(),
+                pipeline_version="v2.1",
+                stage_completed="all",
+                blocks_created=blocks_count,
+                entities_extracted=entities_count,
+                processing_time_seconds=total_duration,
+                api_cost_estimate=api_cost_estimate
+            )
+            self.registry.add_processing_record(video_id, processing_record)
+            
             results.update({
                 "status": "success",
+                "video_id": video_id,
                 "total_duration": total_duration,
                 "pipeline_end": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "final_outputs": {
                     "sag_v2_json": text_result["json_output"],
                     "review_markdown": text_result["md_output"]
-                }
+                },
+                "blocks_created": blocks_count,
+                "entities_extracted": entities_count
             })
             
             self.logger.info(f"🎯 SAG v2.0 Pipeline complete! Total time: {total_duration:.1f}s")
@@ -196,39 +338,87 @@ class PipelineOrchestrator:
             
         except Exception as e:
             self.logger.error(f"Pipeline failed: {e}", exc_info=True)
+            
+            # Записываем ошибку в реестр
+            if video_id:
+                try:
+                    error_record = ProcessingRecord(
+                        processed_at=datetime.now().isoformat(),
+                        pipeline_version="v2.1",
+                        stage_completed="failed",
+                        blocks_created=0,
+                        entities_extracted=0,
+                        processing_time_seconds=time.time() - pipeline_start,
+                        api_cost_estimate=0.0,
+                        error_message=str(e)
+                    )
+                    self.registry.add_processing_record(video_id, error_record)
+                except:
+                    pass
+            
             results.update({
                 "status": "failed",
                 "error": str(e),
+                "video_id": video_id,
                 "total_duration": time.time() - pipeline_start
             })
             return results
     
     def run_batch_pipeline(self, urls_file: str) -> List[Dict[str, Any]]:
         """Run pipeline for multiple URLs from file"""
-        with open(urls_file, 'r') as f:
+        with open(urls_file, 'r', encoding='utf-8') as f:
             urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
         
         self.logger.info(f"🚀 Starting SAG v2.0 batch pipeline for {len(urls)} URLs")
-        results = []
         
-        for i, url in enumerate(urls, 1):
-            self.logger.info(f"📝 Processing URL {i}/{len(urls)}: {url}")
+        # Шаг 1: Сбор метаданных и проверка дубликатов
+        videos_to_process = []
+        skipped_count = 0
+        
+        for url in urls:
+            try:
+                video_id = self.subtitle_extractor.extract_video_id(url)
+                if not video_id:
+                    self.logger.warning(f"⚠️ Не удалось извлечь video_id из: {url}")
+                    continue
+                
+                # Проверка: уже обработано?
+                if self.registry.is_processed(video_id):
+                    self.logger.info(f"⏭️  Пропуск {video_id}: уже обработано")
+                    skipped_count += 1
+                    continue
+                
+                videos_to_process.append((video_id, url))
+                
+            except Exception as e:
+                self.logger.error(f"❌ Ошибка обработки URL {url}: {e}")
+                continue
+        
+        self.logger.info(f"✅ К обработке: {len(videos_to_process)} видео (пропущено: {skipped_count})")
+        
+        # Шаг 2: Обработка видео
+        results = []
+        for i, (video_id, url) in enumerate(videos_to_process, 1):
+            self.logger.info(f"\n{'='*60}")
+            self.logger.info(f"📹 Обработка видео {i}/{len(videos_to_process)}: {video_id}")
+            self.logger.info(f"{'='*60}\n")
+            
             result = self.run_full_pipeline(url)
             results.append(result)
-            
-            # Save batch results in raw_subtitles folder (не в SAG!)
-            batch_dir = Path(self.config['pipeline']['subtitles']['output_dir'])
-            batch_file = batch_dir / "batch_results.json"
-            with open(batch_file, "w") as f:
-                json.dump(results, f, indent=2, ensure_ascii=False)
-            
-            # Очищаем старые batch результаты (оставляем только последние 2)
-            batch_results = list(batch_dir.glob("batch_pipeline_results_*.json"))
-            if len(batch_results) > 2:
-                batch_results.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-                for old_batch in batch_results[2:]:
-                    old_batch.unlink()
-                    self.logger.info(f"🗑️ Old batch result removed: {old_batch.name}")
+        
+        # Финальная статистика
+        stats = self.registry.get_statistics()
+        self.logger.info(f"\n{'='*60}")
+        self.logger.info(f"📊 ИТОГОВАЯ СТАТИСТИКА")
+        self.logger.info(f"{'='*60}")
+        self.logger.info(f"Всего видео: {stats['total_videos']}")
+        self.logger.info(f"Обработано: {stats['processed']}")
+        self.logger.info(f"Ошибок: {stats['failed']}")
+        self.logger.info(f"В очереди: {stats['pending']}")
+        self.logger.info(f"Всего блоков: {stats['total_blocks']}")
+        self.logger.info(f"Всего сущностей: {stats['total_entities']}")
+        self.logger.info(f"Затраты API: ${stats['total_api_cost']}")
+        self.logger.info(f"{'='*60}\n")
         
         return results
 
@@ -313,8 +503,16 @@ def main():
         results_dir = Path(orchestrator.config['pipeline']['subtitles']['output_dir'])
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         results_file = results_dir / f"batch_pipeline_results_{timestamp}.json"
-        with open(results_file, "w") as f:
+        with open(results_file, "w", encoding='utf-8') as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
+        
+        # Очищаем старые batch результаты (оставляем только последние 2)
+        batch_results = list(results_dir.glob("batch_pipeline_results_*.json"))
+        if len(batch_results) > 2:
+            batch_results.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+            for old_batch in batch_results[2:]:
+                old_batch.unlink()
+                orchestrator.logger.info(f"🗑️ Old batch result removed: {old_batch.name}")
         
         successful = sum(1 for r in results if r["status"] == "success")
         print(f"\n[BATCH COMPLETE] SAG v2.0: {successful}/{len(results)} URLs processed successfully")

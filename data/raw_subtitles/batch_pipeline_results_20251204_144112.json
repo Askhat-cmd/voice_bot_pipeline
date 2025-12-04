@@ -9,15 +9,15 @@
       "subtitles": {
         "status": "success",
         "duration": 1.1772620677947998,
-        "json_path": "data\\raw_subtitles\\2025\\09\\2025-09-02_iBEbF8zuhQ8_РћРїС‹С‚_РЅРёС‚СЊ_РђСЂРёР°РґРЅС‹.json",
-        "srt_path": "data\\raw_subtitles\\2025\\09\\2025-09-02_iBEbF8zuhQ8_РћРїС‹С‚_РЅРёС‚СЊ_РђСЂРёР°РґРЅС‹.srt",
-        "txt_path": "data\\raw_subtitles\\2025\\09\\2025-09-02_iBEbF8zuhQ8_РћРїС‹С‚_РЅРёС‚СЊ_РђСЂРёР°РґРЅС‹.txt"
+        "json_path": "data\\raw_subtitles\\2025\\09\\2025-09-02_iBEbF8zuhQ8_Опыт_нить_Ариадны.json",
+        "srt_path": "data\\raw_subtitles\\2025\\09\\2025-09-02_iBEbF8zuhQ8_Опыт_нить_Ариадны.srt",
+        "txt_path": "data\\raw_subtitles\\2025\\09\\2025-09-02_iBEbF8zuhQ8_Опыт_нить_Ариадны.txt"
       },
       "text_processing": {
         "status": "success",
         "duration": 158.6040334701538,
-        "sag_v2_output": "data\\sag_final\\2025\\09\\2025-09-02_iBEbF8zuhQ8_РћРїС‹С‚_РЅРёС‚СЊ_РђСЂРёР°РґРЅС‹.for_vector.json",
-        "review_markdown": "data\\sag_final\\2025\\09\\2025-09-02_iBEbF8zuhQ8_РћРїС‹С‚_РЅРёС‚СЊ_РђСЂРёР°РґРЅС‹.for_review.md",
+        "sag_v2_output": "data\\sag_final\\2025\\09\\2025-09-02_iBEbF8zuhQ8_Опыт_нить_Ариадны.for_vector.json",
+        "review_markdown": "data\\sag_final\\2025\\09\\2025-09-02_iBEbF8zuhQ8_Опыт_нить_Ариадны.for_review.md",
         "blocks_created": 5,
         "schema_version": "2.0"
       },
@@ -40,8 +40,8 @@
     "total_duration": 160.46692180633545,
     "pipeline_end": "2025-12-04 14:41:11",
     "final_outputs": {
-      "sag_v2_json": "data\\sag_final\\2025\\09\\2025-09-02_iBEbF8zuhQ8_РћРїС‹С‚_РЅРёС‚СЊ_РђСЂРёР°РґРЅС‹.for_vector.json",
-      "review_markdown": "data\\sag_final\\2025\\09\\2025-09-02_iBEbF8zuhQ8_РћРїС‹С‚_РЅРёС‚СЊ_РђСЂРёР°РґРЅС‹.for_review.md"
+      "sag_v2_json": "data\\sag_final\\2025\\09\\2025-09-02_iBEbF8zuhQ8_Опыт_нить_Ариадны.for_vector.json",
+      "review_markdown": "data\\sag_final\\2025\\09\\2025-09-02_iBEbF8zuhQ8_Опыт_нить_Ариадны.for_review.md"
     },
     "blocks_created": 5,
     "entities_extracted": 37

@@ -19,6 +19,15 @@ except ImportError:
     print("Установите: pip install youtube-transcript-api")
     raise
 
+# Импорт утилит для работы с файлами (опционально, для обратной совместимости)
+try:
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from utils.file_utils import create_filename, get_date_paths
+    HAS_FILE_UTILS = True
+except ImportError:
+    HAS_FILE_UTILS = False
+
 class YouTubeSubtitlesExtractor:
     """Класс для извлечения субтитров с YouTube"""
     
@@ -86,9 +95,30 @@ class YouTubeSubtitlesExtractor:
         millisecs = int((seconds % 1) * 1000)
         return f"{hours:02d}:{minutes:02d}:{secs:02d},{millisecs:03d}"
     
-    def save_subtitles(self, video_id: str, subtitles: List[Dict]) -> Dict[str, str]:
-        """Сохраняет субтитры в различных форматах"""
-        base_filename = f"{video_id}"
+    def save_subtitles(self, video_id: str, subtitles: List[Dict], 
+                      title: Optional[str] = None, 
+                      published_date: Optional[str] = None) -> Dict[str, str]:
+        """
+        Сохраняет субтитры в различных форматах.
+        
+        Args:
+            video_id: ID видео
+            subtitles: Список субтитров
+            title: Название видео (опционально, для новых имен файлов)
+            published_date: Дата публикации ISO (опционально, для организации по датам)
+        """
+        # Определяем базовое имя файла
+        if HAS_FILE_UTILS and title and published_date:
+            # Используем новый формат с датами и названиями
+            base_filename = create_filename(video_id, title, published_date, ext="").rstrip('.')
+            # Получаем путь по датам
+            date_path, year, month = get_date_paths(self.output_dir, published_date)
+            date_path.mkdir(parents=True, exist_ok=True)
+            output_dir = date_path
+        else:
+            # Старый формат для обратной совместимости
+            base_filename = f"{video_id}"
+            output_dir = self.output_dir
         
         # Метаданные
         total_duration = 0
@@ -107,7 +137,7 @@ class YouTubeSubtitlesExtractor:
         saved_files = {}
         
         # Сохраняем JSON
-        json_path = self.output_dir / f"{base_filename}.json"
+        json_path = output_dir / f"{base_filename}.json"
         
         # Конвертируем объекты в словари для JSON
         subtitles_dict = []
@@ -132,7 +162,7 @@ class YouTubeSubtitlesExtractor:
         saved_files['json'] = str(json_path)
         
         # Сохраняем TXT (только текст)
-        txt_path = self.output_dir / f"{base_filename}.txt"
+        txt_path = output_dir / f"{base_filename}.txt"
         text_content = ""
         for item in subtitles:
             # Проверяем тип объекта
@@ -148,7 +178,7 @@ class YouTubeSubtitlesExtractor:
         saved_files['txt'] = str(txt_path)
         
         # Сохраняем SRT
-        srt_path = self.output_dir / f"{base_filename}.srt"
+        srt_path = output_dir / f"{base_filename}.srt"
         srt_lines = []
         
         for i, item in enumerate(subtitles, 1):

@@ -1,0 +1,49 @@
+[
+  {
+    "youtube_url": "https://youtu.be/_FkqbzZYXk0?si=is_eCQmLZ7ZFOPVG",
+    "custom_name": null,
+    "pipeline_start": "2025-12-04 14:49:56",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.2089862823486328,
+        "json_path": "data\\raw_subtitles\\2025\\08\\2025-08-14__FkqbzZYXk0_Игра_в_Одного.json",
+        "srt_path": "data\\raw_subtitles\\2025\\08\\2025-08-14__FkqbzZYXk0_Игра_в_Одного.srt",
+        "txt_path": "data\\raw_subtitles\\2025\\08\\2025-08-14__FkqbzZYXk0_Игра_в_Одного.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 89.79540491104126,
+        "sag_v2_output": "data\\sag_final\\2025\\08\\2025-08-14__FkqbzZYXk0_Игра_в_Одного.for_vector.json",
+        "review_markdown": "data\\sag_final\\2025\\08\\2025-08-14__FkqbzZYXk0_Игра_в_Одного.for_review.md",
+        "blocks_created": 2,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 0.6648552417755127,
+        "indexed": {
+          "documents": 1,
+          "blocks": 2,
+          "graph_entities": 13
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "_FkqbzZYXk0",
+    "total_duration": 91.67786693572998,
+    "pipeline_end": "2025-12-04 14:51:28",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2025\\08\\2025-08-14__FkqbzZYXk0_Игра_в_Одного.for_vector.json",
+      "review_markdown": "data\\sag_final\\2025\\08\\2025-08-14__FkqbzZYXk0_Игра_в_Одного.for_review.md"
+    },
+    "blocks_created": 2,
+    "entities_extracted": 16
+  }
+]
