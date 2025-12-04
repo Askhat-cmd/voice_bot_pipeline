@@ -6,6 +6,7 @@
 
 import time
 import logging
+import os
 from pathlib import Path
 import sys
 import json
@@ -15,6 +16,7 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 from vector_db import VectorDBManager, EmbeddingService, VectorIndexer
+from env_utils import load_env
 import yaml
 
 # Настройка логирования
@@ -27,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 def test_vectorization_speed():
     """Тестирует скорость векторизации одного документа"""
+    
+    # Загрузка переменных окружения
+    load_env()
     
     # Загрузка конфигурации
     config_path = Path("config.yaml")
@@ -42,11 +47,11 @@ def test_vectorization_speed():
     logger.info("=" * 80)
     
     # Вывод текущей конфигурации
-    rate_config = config['vector_db']['rate_limiting']
+    embedding_config = config['vector_db']['embedding']
     logger.info(f"\n📋 Текущая конфигурация:")
-    logger.info(f"   chunk_size: {rate_config['chunk_size']}")
-    logger.info(f"   delay_between_requests: {rate_config['delay_between_requests']}s")
-    logger.info(f"   max_workers: {rate_config['max_workers']}")
+    logger.info(f"   Модель: {embedding_config.get('model', 'N/A')}")
+    logger.info(f"   Размерность: {embedding_config.get('dimension', 'N/A')}")
+    logger.info(f"   Batch size: {config['vector_db'].get('batch_size', 100)}")
     
     # Инициализация компонентов
     db_manager = VectorDBManager(
@@ -54,20 +59,9 @@ def test_vectorization_speed():
         collection_prefix=config['vector_db']['collection_prefix']
     )
     
-    # Настройки rate limiting из config
-    rate_limiting = config['vector_db'].get('rate_limiting', {})
-    text_processing = config['vector_db'].get('text_processing', {})
-    embedding_service = EmbeddingService(
-        model=config['vector_db']['embedding']['model'],
-        chunk_size=rate_limiting.get('chunk_size', 2048),
-        delay_between_requests=rate_limiting.get('delay_between_requests', 0.5),
-        max_retries=rate_limiting.get('max_retries', 5),
-        retry_delay=rate_limiting.get('retry_delay', 2.0),
-        max_retry_delay=rate_limiting.get('max_retry_delay', 60.0),
-        max_tokens_per_text=text_processing.get('max_tokens_per_text', 8000),
-        chunk_overlap=text_processing.get('chunk_overlap', 100),
-        max_workers=rate_limiting.get('max_workers', 3)
-    )
+    # Модель: сначала из env, потом из config
+    embedding_model = os.getenv("SENTENCE_TRANSFORMERS_MODEL") or config['vector_db']['embedding'].get('model')
+    embedding_service = EmbeddingService(model=embedding_model)
     
     indexer = VectorIndexer(
         db_manager=db_manager,

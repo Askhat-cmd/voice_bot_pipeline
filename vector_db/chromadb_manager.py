@@ -48,7 +48,7 @@ class VectorDBManager:
     def get_or_create_collection(
         self, 
         collection_name: str, 
-        embedding_dimension: int = 1536
+        embedding_dimension: int = 1024
     ) -> chromadb.Collection:
         """
         Получает или создает коллекцию

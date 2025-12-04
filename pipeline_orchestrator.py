@@ -49,20 +49,9 @@ class PipelineOrchestrator:
                     collection_prefix=self.config['vector_db']['collection_prefix']
                 )
                 
-                # Настройки rate limiting из config
-                rate_limiting = self.config['vector_db'].get('rate_limiting', {})
-                text_processing = self.config['vector_db'].get('text_processing', {})
-                embedding_service = EmbeddingService(
-                    model=self.config['vector_db']['embedding']['model'],
-                    chunk_size=rate_limiting.get('chunk_size', 2048),
-                    delay_between_requests=rate_limiting.get('delay_between_requests', 15.0),
-                    max_retries=rate_limiting.get('max_retries', 5),
-                    retry_delay=rate_limiting.get('retry_delay', 2.0),
-                    max_retry_delay=rate_limiting.get('max_retry_delay', 60.0),
-                    max_tokens_per_text=text_processing.get('max_tokens_per_text', 8000),
-                    chunk_overlap=text_processing.get('chunk_overlap', 100),
-                    max_workers=rate_limiting.get('max_workers', 1)
-                )
+                # Модель: сначала из env, потом из config
+                embedding_model = os.getenv("SENTENCE_TRANSFORMERS_MODEL") or self.config['vector_db']['embedding'].get('model')
+                embedding_service = EmbeddingService(model=embedding_model)
                 self.vector_indexer = VectorIndexer(
                     db_manager=db_manager,
                     embedding_service=embedding_service,
@@ -275,20 +264,9 @@ def main():
                     collection_prefix=orchestrator.config['vector_db']['collection_prefix']
                 )
                 
-                # Настройки rate limiting из config
-                rate_limiting = orchestrator.config['vector_db'].get('rate_limiting', {})
-                text_processing = orchestrator.config['vector_db'].get('text_processing', {})
-                embedding_service = EmbeddingService(
-                    model=orchestrator.config['vector_db']['embedding']['model'],
-                    chunk_size=rate_limiting.get('chunk_size', 2048),
-                    delay_between_requests=rate_limiting.get('delay_between_requests', 15.0),
-                    max_retries=rate_limiting.get('max_retries', 5),
-                    retry_delay=rate_limiting.get('retry_delay', 2.0),
-                    max_retry_delay=rate_limiting.get('max_retry_delay', 60.0),
-                    max_tokens_per_text=text_processing.get('max_tokens_per_text', 8000),
-                    chunk_overlap=text_processing.get('chunk_overlap', 100),
-                    max_workers=rate_limiting.get('max_workers', 1)
-                )
+                # Модель: сначала из env, потом из config
+                embedding_model = os.getenv("SENTENCE_TRANSFORMERS_MODEL") or orchestrator.config['vector_db']['embedding'].get('model')
+                embedding_service = EmbeddingService(model=embedding_model)
                 orchestrator.vector_indexer = VectorIndexer(
                     db_manager=db_manager,
                     embedding_service=embedding_service,

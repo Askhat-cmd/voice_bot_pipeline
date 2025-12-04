@@ -7,6 +7,7 @@
 import argparse
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -15,6 +16,7 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 from vector_db import VectorDBManager, EmbeddingService, VectorIndexer
+from env_utils import load_env
 import yaml
 
 # Настройка логирования
@@ -54,6 +56,9 @@ def main():
     
     args = parser.parse_args()
     
+    # Загрузка переменных окружения
+    load_env()
+    
     # Загрузка конфигурации
     config_path = Path(args.config)
     if not config_path.exists():
@@ -74,19 +79,9 @@ def main():
             collection_prefix=config['vector_db']['collection_prefix']
         )
         
-        # Настройки rate limiting из config
-        rate_limiting = config['vector_db'].get('rate_limiting', {})
-        text_processing = config['vector_db'].get('text_processing', {})
-        embedding_service = EmbeddingService(
-            model=config['vector_db']['embedding']['model'],
-            chunk_size=rate_limiting.get('chunk_size', 10),
-            delay_between_requests=rate_limiting.get('delay_between_requests', 0.5),
-            max_retries=rate_limiting.get('max_retries', 5),
-            retry_delay=rate_limiting.get('retry_delay', 2.0),
-            max_retry_delay=rate_limiting.get('max_retry_delay', 60.0),
-            max_tokens_per_text=text_processing.get('max_tokens_per_text', 8000),
-            chunk_overlap=text_processing.get('chunk_overlap', 100)
-        )
+        # Модель: сначала из env, потом из config
+        embedding_model = os.getenv("SENTENCE_TRANSFORMERS_MODEL") or config['vector_db']['embedding'].get('model')
+        embedding_service = EmbeddingService(model=embedding_model)
         indexer = VectorIndexer(
             db_manager=db_manager,
             embedding_service=embedding_service,
