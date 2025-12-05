@@ -1,0 +1,49 @@
+[
+  {
+    "youtube_url": "https://youtu.be/AywCuqxmxx8?si=EWJpcvgLw4v-bdHo",
+    "custom_name": null,
+    "pipeline_start": "2025-12-05 17:30:03",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.163377285003662,
+        "json_path": "data\\raw_subtitles\\2025\\08\\2025-08-21_AywCuqxmxx8_Картограф_Сознания.json",
+        "srt_path": "data\\raw_subtitles\\2025\\08\\2025-08-21_AywCuqxmxx8_Картограф_Сознания.srt",
+        "txt_path": "data\\raw_subtitles\\2025\\08\\2025-08-21_AywCuqxmxx8_Картограф_Сознания.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 110.29944372177124,
+        "sag_v2_output": "data\\sag_final\\2025\\08\\2025-08-21_AywCuqxmxx8_Картограф_Сознания.for_vector.json",
+        "review_markdown": "data\\sag_final\\2025\\08\\2025-08-21_AywCuqxmxx8_Картограф_Сознания.for_review.md",
+        "blocks_created": 2,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 1.0801093578338623,
+        "indexed": {
+          "documents": 1,
+          "blocks": 2,
+          "graph_entities": 14
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "AywCuqxmxx8",
+    "total_duration": 112.18682026863098,
+    "pipeline_end": "2025-12-05 17:31:55",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2025\\08\\2025-08-21_AywCuqxmxx8_Картограф_Сознания.for_vector.json",
+      "review_markdown": "data\\sag_final\\2025\\08\\2025-08-21_AywCuqxmxx8_Картограф_Сознания.for_review.md"
+    },
+    "blocks_created": 2,
+    "entities_extracted": 17
+  }
+]

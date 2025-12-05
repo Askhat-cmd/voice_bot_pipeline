@@ -1,0 +1,70 @@
+# Конфигурация системы экстракторов Сарсекенова
+
+terminology:
+  strict_mode: true
+  min_density: 0.25
+  allow_mixed_content: false
+  case_sensitive: false
+
+extractors:
+  terminology_validator:
+    enabled: true
+    priority: 0
+    min_sarsekenov_density: 0.25
+    max_forbidden_terms: 0
+    
+  neurostalking_pattern_extractor:
+    enabled: true
+    priority: 1
+    pattern_categories:
+      - триада_трансформации
+      - работа_с_вниманием
+      - разотождествление
+      - состояния_сознания
+    
+  causal_chain_extractor:
+    enabled: true
+    priority: 2
+    min_sarsekenov_terms_per_chain: 3
+    max_chain_length: 5
+    
+  concept_hierarchy_extractor:
+    enabled: true
+    priority: 3
+    strict_levels: true
+    levels:
+      - root
+      - domain
+      - practice
+      - technique
+      - exercise
+    
+  attention_field_extractor:
+    enabled: true
+    priority: 4
+    focus_terms:
+      - "поле внимания"
+      - "свободное внимание"
+      - "захват внимания"
+      - "расширение поля"
+    
+  transformation_process_extractor:
+    enabled: true
+    priority: 5
+    process_types:
+      - разотождествление
+      - центрирование
+      - интеграция
+      - прозрение
+      - пробуждение
+
+output:
+  format: json
+  validate_before_save: true
+  include_metadata: true
+  include_source_quotes: true
+
+logging:
+  level: INFO
+  log_validation_failures: true
+  log_extraction_stats: true
