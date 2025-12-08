@@ -251,9 +251,148 @@ print(f"Термины: {result.sarsekenov_entities}")
 
 ---
 
+---
+
+## Этап 2: NeurostalkingPatternExtractor
+
+**Статус:** Завершён
+
+**Дата:** 2024-12-08
+
+### Файл: `text_processor/extractors/neurostalking_pattern_extractor.py`
+
+**Назначение:** Извлечение уникальных паттернов учения Сарсекенова из валидированного текста.
+
+### Ключевые компоненты
+
+#### 1. Класс `NeurostalkingPattern`
+
+```python
+@dataclass
+class NeurostalkingPattern:
+    pattern_category: str    # триада_трансформации, работа_с_вниманием, и т.д.
+    pattern_name: str
+    description: str
+    key_terms: List[str]
+    typical_context: str
+    recognition_markers: List[str]
+    related_practices: List[str]
+    source_quote: str
+    confidence: float        # 0.0 - 1.0
+```
+
+#### 2. Класс `NeurostalkingPatternExtractor`
+
+**Основные методы:**
+
+| Метод | Описание |
+|-------|----------|
+| `extract()` | Главный метод извлечения паттернов |
+| `_identify_relevant_categories()` | Определение релевантных категорий |
+| `_extract_rule_based()` | Извлечение на основе правил |
+| `_create_pattern_from_sentence()` | Создание паттерна из предложения |
+| `_calculate_confidence()` | Расчёт уверенности |
+| `_identify_related_practices()` | Определение связанных практик |
+
+### Категории паттернов
+
+| Категория | Ключевые термины | Описание |
+|-----------|------------------|----------|
+| `триада_трансформации` | наблюдение, осознавание, трансформация, метанаблюдение | Процесс: наблюдение → осознавание → трансформация |
+| `работа_с_вниманием` | поле внимания, свободное внимание, захват внимания | Процессы работы с полем внимания |
+| `разотождествление` | разотождествление, Я-образ, идентификация | Процессы отделения от ложной самости |
+| `состояния_сознания` | чистое осознавание, присутствие, живое переживание | Состояния чистого осознавания |
+
+### Алгоритм извлечения
+
+```
+1. Валидация текста через TerminologyValidator
+   └── Если is_valid=False → Отклонить
+   
+2. Определение релевантных категорий
+   └── На основе найденных терминов Сарсекенова
+   
+3. Извлечение паттернов (rule-based или LLM)
+   └── Анализ предложений на наличие ключевых терминов
+   └── Минимум 2 термина категории в предложении
+   
+4. Создание структур паттернов
+   └── Расчёт уверенности
+   └── Определение маркеров и практик
+   
+5. Возврат результата с метриками
+```
+
+### Тесты: `tests/extractors/test_neurostalking_pattern_extractor.py`
+
+| Тест | Описание | Результат |
+|------|----------|-----------|
+| test_extract_triada_pattern | Извлечение паттерна триады | ✅ |
+| test_extract_attention_field_pattern | Извлечение паттерна внимания | ✅ |
+| test_extract_disidentification_pattern | Извлечение паттерна разотождествления | ✅ |
+| test_extract_consciousness_state_pattern | Извлечение паттерна состояния сознания | ✅ |
+| test_invalid_text_rejected | Невалидный текст отклоняется | ✅ |
+| test_low_density_text_rejected | Низкая плотность отклоняется | ✅ |
+| test_specific_category_extraction | Извлечение конкретной категории | ✅ |
+| test_confidence_calculation | Расчёт уверенности | ✅ |
+| test_related_practices_identified | Определение связанных практик | ✅ |
+| test_utility_function | Utility функция extract_patterns | ✅ |
+| test_pattern_structure | Проверка структуры паттерна | ✅ |
+
+**Результат:** ВСЕ 11 ТЕСТОВ ПРОЙДЕНЫ
+
+### Пример использования
+
+```python
+from text_processor.extractors import NeurostalkingPatternExtractor, extract_patterns
+
+extractor = NeurostalkingPatternExtractor()
+
+text = """
+Когда Ищущий практикует метанаблюдение, он сначала наблюдает за 
+мыслительным потоком. Затем происходит осознавание автоматизмов психики.
+Это ведет к трансформации через разотождествление с Я-образом.
+"""
+
+result = extractor.extract(text)
+
+print(f"Валиден: {result['valid']}")
+print(f"Паттернов найдено: {len(result['patterns'])}")
+for p in result['patterns']:
+    print(f"  - {p['pattern_category']}: {p['pattern_name']} ({p['confidence']:.2f})")
+```
+
+**Вывод:**
+```
+Валиден: True
+Паттернов найдено: 2
+  - триада_трансформации: метанаблюдение и осознавание (0.65)
+  - разотождествление: разотождествление и Я-образ (0.60)
+```
+
+### Интеграция с TerminologyValidator
+
+```
+NeurostalkingPatternExtractor
+         │
+         ├── __init__(terminology_validator=None)
+         │   └── Создаёт TerminologyValidator если не передан
+         │
+         └── extract(text)
+             │
+             ├── 1. validator.validate_text(text, min_density=0.25)
+             │   └── Отклоняет невалидные тексты
+             │
+             └── 2. Использует validation.sarsekenov_entities
+                 └── Для определения категорий и создания паттернов
+```
+
+---
+
 ## Следующие этапы
 
-- [ ] **Этап 2:** NeurostalkingPatternExtractor
+- [x] **Этап 1:** TerminologyValidator
+- [x] **Этап 2:** NeurostalkingPatternExtractor
 - [ ] **Этап 3:** CausalChainExtractor (с валидацией)
 - [ ] **Этап 4:** ConceptHierarchyExtractor (с валидацией)
 - [ ] **Этап 5:** Интеграция с оркестратором
@@ -266,7 +405,7 @@ print(f"Термины: {result.sarsekenov_entities}")
 pymorphy3>=1.0.0
 ```
 
-## Структура проекта после Этапа 1
+## Структура проекта после Этапа 2
 
 ```
 voice_bot_pipeline/
@@ -281,10 +420,12 @@ voice_bot_pipeline/
 │   │   ├── __init__.py
 │   │   └── terminology_validator.py
 │   └── extractors/
-│       └── __init__.py
+│       ├── __init__.py
+│       └── neurostalking_pattern_extractor.py   # НОВОЕ
 └── tests/
     ├── __init__.py
     └── extractors/
         ├── __init__.py
-        └── test_terminology_validator.py
+        ├── test_terminology_validator.py
+        └── test_neurostalking_pattern_extractor.py  # НОВОЕ
 ```
