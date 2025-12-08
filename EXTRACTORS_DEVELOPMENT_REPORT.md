@@ -454,11 +454,193 @@ NeurostalkingPatternExtractor
 
 ---
 
+## Этап 3: CausalChainExtractor
+
+**Статус:** Завершён
+
+**Дата:** 2024-12-08
+
+### Файл: `text_processor/extractors/causal_chain_extractor.py`
+
+**Назначение:** Извлечение причинно-следственных цепочек трансформации сознания в терминологии Сарсекенова. Полностью совместим с SMART режимом валидации.
+
+### Философия
+
+**НЕ линейная причинность** (A→B→C), **А СИСТЕМНАЯ трансформация**:
+- Каждый этап возникает из целостности процесса (эмерджентность)
+- Этапы связаны через `emerges_from` и `enables`
+- Поддержка циклических/спиральных процессов
+- Маркеры целостности системы
+
+### Ключевые компоненты
+
+#### 1. Dataclasses
+
+```python
+@dataclass
+class InterventionPoint:
+    """Точка возможного вмешательства в процесс"""
+    at_stage: int                    # На каком этапе
+    practice: str                    # Какая практика применяется
+    triggers: List[str]              # Что запускает практику
+    expected_outcome: str            # Ожидаемый результат
+
+@dataclass
+class CausalChainStage:
+    """Этап в процессе трансформации"""
+    stage: int                       # Номер этапа
+    stage_name: str                  # Название (из терминов)
+    description: str                 # Описание (из текста)
+    sarsekenov_terms: List[str]      # Термины Сарсекенова
+    emerges_from: Optional[List[int]]  # Из каких этапов возникает
+    enables: Optional[List[int]]       # Какие этапы делает возможными
+
+@dataclass
+class CausalChain:
+    """Причинно-следственная цепочка (системная трансформация)"""
+    process_name: str                # Название процесса
+    process_category: str            # Категория (из 5 типов)
+    stages: List[CausalChainStage]   # Этапы процесса
+    intervention_points: List[InterventionPoint]
+    context: str                     # Контекст (200 символов)
+    source_quote: str                # Исходная цитата
+    confidence: float                # Уверенность (0.0-1.0)
+    is_cyclical: bool                # Циклический процесс?
+    wholeness_markers: List[str]     # Маркеры целостности
+    sarsekenov_density: float        # Плотность терминов
+```
+
+#### 2. Категории процессов (5 типов)
+
+| Категория | Ключевые термины | Описание |
+|-----------|------------------|----------|
+| `триада_трансформации` | метанаблюдение, наблюдение, осознавание, трансформация | Основной процесс нейро-сталкинга |
+| `работа_с_вниманием` | поле внимания, свободное внимание, захват внимания | Работа с полем внимания |
+| `разотождествление` | разотождествление, Я-образ, идентификация | Отделение от ложной самости |
+| `пробуждение_сознания` | пробуждение, реализация, прозрение, ясность | Процессы пробуждения |
+| `интеграция_целостности` | интеграция, целостность, самодостаточность | Интеграция опыта |
+
+#### 3. SMART режим валидации
+
+**Философия:**
+```
+1. Forbidden terms НЕ блокируют текст
+2. Минимум 15% плотности (не 25%)
+3. Фокус на системности, не линейности
+4. LLM на выходе сам фильтрует стиль
+```
+
+### Алгоритм извлечения
+
+```
+1. ВАЛИДАЦИЯ через TerminologyValidator (SMART режим)
+   └── НЕ указываем min_density - берётся из .env (SMART = 0.15)
+   
+2. ОПРЕДЕЛЕНИЕ релевантных категорий
+   └── Минимум 2 термина категории в тексте
+   
+3. ИЗВЛЕЧЕНИЕ цепочек (rule-based или LLM)
+   └── Разбиение на предложения
+   └── Построение этапов с системными связями
+   └── Определение точек вмешательства
+   
+4. ВАЛИДАЦИЯ каждой цепочки
+   └── Минимум 3 термина Сарсекенова
+   
+5. ОПРЕДЕЛЕНИЕ метаданных
+   └── is_cyclical (маркеры: "снова", "спираль", "цикл")
+   └── wholeness_markers ("целостность", "интеграция")
+   └── confidence (базовая + бонусы за этапы/термины/связи)
+```
+
+### Расчёт уверенности (confidence)
+
+```python
+base = 0.5
+stages_bonus = min(len(stages) * 0.05, 0.2)    # +0.05 за этап, макс 0.2
+terms_bonus = min(len(all_terms) * 0.02, 0.2)  # +0.02 за термин, макс 0.2
+systemic_bonus = min(links * 0.05, 0.1)        # +0.05 за связь, макс 0.1
+confidence = min(base + stages_bonus + terms_bonus + systemic_bonus, 1.0)
+```
+
+### Тесты: `tests/extractors/test_causal_chain_extractor.py`
+
+| Тест | Описание | Результат |
+|------|----------|-----------|
+| test_extract_triada_transformation_chain | Триада: наблюдение → осознавание → трансформация | ✅ |
+| test_extract_attention_work_chain | Работа с полем внимания | ✅ |
+| test_extract_disidentification_chain | Разотождествление с Я-образом | ✅ |
+| test_low_density_rejected | Низкая плотность (<15%) отклоняется | ✅ |
+| test_forbidden_terms_NOT_rejected_in_smart_mode | **КРИТИЧНО:** SMART режим не блокирует forbidden | ✅ |
+| test_intervention_points_identified | Определение точек вмешательства | ✅ |
+| test_cyclical_process_detection | Определение цикличности | ✅ |
+| test_wholeness_markers_extraction | Извлечение маркеров целостности | ✅ |
+| test_systemic_relationships | Проверка emerges_from и enables | ✅ |
+| test_confidence_calculation | Расчёт уверенности | ✅ |
+| test_multiple_categories_in_text | Извлечение нескольких категорий | ✅ |
+| test_minimum_sarsekenov_terms_requirement | Минимум 3 термина на цепочку | ✅ |
+| test_utility_function | Utility функция extract_causal_chains | ✅ |
+| test_chain_structure_completeness | Полнота структуры CausalChain | ✅ |
+
+**Результат:** 14+ ТЕСТОВ
+
+### Пример использования
+
+```python
+from text_processor.extractors import CausalChainExtractor, extract_causal_chains
+
+text = """
+Когда Ищущий практикует метанаблюдение, он сначала наблюдает 
+за мыслительным потоком. Затем происходит осознавание автоматизмов 
+психики. Это ведет к трансформации через разотождествление с Я-образом.
+В результате возникает чистое осознавание и свободное внимание.
+"""
+
+# Быстрый способ:
+result = extract_causal_chains(text, specific_category="триада_трансформации")
+
+print(f"Валиден: {result['valid']}")
+print(f"Цепочек: {len(result['chains'])}")
+for chain in result['chains']:
+    print(f"  - {chain['process_category']}: {chain['process_name']}")
+    print(f"    Этапов: {len(chain['stages'])}, Уверенность: {chain['confidence']:.2f}")
+    print(f"    Циклический: {chain['is_cyclical']}")
+```
+
+**Вывод:**
+```
+Валиден: True
+Цепочек: 1
+  - триада_трансформации: метанаблюдение → осознавание
+    Этапов: 4, Уверенность: 0.78
+    Циклический: False
+```
+
+### Интеграция с TerminologyValidator
+
+```
+CausalChainExtractor
+         │
+         ├── __init__(terminology_validator=None)
+         │   └── Создаёт TerminologyValidator если не передан
+         │
+         └── extract(text)
+             │
+             ├── 1. validator.validate_text(text)
+             │   └── SMART режим: min_density=0.15, forbidden игнорируются
+             │
+             ├── 2. Определение категорий по validation.sarsekenov_entities
+             │
+             └── 3. Построение цепочек с системными связями
+```
+
+---
+
 ## Следующие этапы
 
 - [x] **Этап 1:** TerminologyValidator
 - [x] **Этап 2:** NeurostalkingPatternExtractor
-- [ ] **Этап 3:** CausalChainExtractor (с валидацией)
+- [x] **Этап 3:** CausalChainExtractor (с валидацией) ✅ NEW
 - [ ] **Этап 4:** ConceptHierarchyExtractor (с валидацией)
 - [ ] **Этап 5:** Интеграция с оркестратором
 
@@ -471,7 +653,7 @@ pymorphy3>=1.0.0
 python-dotenv>=1.0.0  # для загрузки настроек из .env
 ```
 
-## Структура проекта после Этапа 2
+## Структура проекта после Этапа 3
 
 ```
 voice_bot_pipeline/
@@ -487,11 +669,13 @@ voice_bot_pipeline/
 │   │   └── terminology_validator.py
 │   └── extractors/
 │       ├── __init__.py
-│       └── neurostalking_pattern_extractor.py   # НОВОЕ
+│       ├── neurostalking_pattern_extractor.py
+│       └── causal_chain_extractor.py          # ✅ NEW (Этап 3)
 └── tests/
     ├── __init__.py
     └── extractors/
         ├── __init__.py
         ├── test_terminology_validator.py
-        └── test_neurostalking_pattern_extractor.py  # НОВОЕ
+        ├── test_neurostalking_pattern_extractor.py
+        └── test_causal_chain_extractor.py     # ✅ NEW (Этап 3)
 ```
