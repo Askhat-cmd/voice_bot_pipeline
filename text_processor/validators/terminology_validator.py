@@ -3,14 +3,29 @@
 """
 Терминологический валидатор для учения Саламата Сарсекенова.
 Это ФУНДАМЕНТ всей системы - ни один текст не обрабатывается без валидации.
+
+Поддерживает 4 режима валидации:
+- smart (рекомендуемый): только проверка плотности ≥15%
+- soft: пропускает forbidden terms в объяснительном контексте
+- strict: блокирует любые forbidden terms
+- off: только проверка плотности, никаких ограничений
 """
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Dict, List, Set, Optional
 from dataclasses import dataclass
 import logging
+
+# Загрузка переменных окружения
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    DOTENV_AVAILABLE = True
+except ImportError:
+    DOTENV_AVAILABLE = False
 
 try:
     import pymorphy3 as pymorphy2  # pymorphy3 - форк для Python 3.11+
@@ -33,6 +48,7 @@ class ValidationResult:
     metrics: Dict
     forbidden_terms_found: List[str]
     sarsekenov_entities: List[str]
+    is_contextual: bool = False  # True если forbidden terms в объяснительном контексте
 
 
 class TerminologyValidator:
@@ -56,7 +72,13 @@ class TerminologyValidator:
         else:
             self.config_dir = Path(config_dir)
         
-        # Загрузка конфигурации
+        # Загрузка настроек режима валидации из .env
+        self.validation_mode = os.getenv('VALIDATION_MODE', 'smart')
+        self.min_density_smart = float(os.getenv('MIN_SARSEKENOV_DENSITY_SMART', '0.15'))
+        self.min_density_strict = float(os.getenv('MIN_SARSEKENOV_DENSITY_STRICT', '0.25'))
+        self.contextual_threshold = float(os.getenv('CONTEXTUAL_DENSITY_THRESHOLD', '0.35'))
+        
+        # Загрузка конфигурации терминологии
         self.sarsekenov_terms = self._load_sarsekenov_terms()
         self.forbidden_config = self._load_forbidden_terms()
         self.term_categories = self._load_term_categories()
@@ -80,7 +102,9 @@ class TerminologyValidator:
         
         logger.info(f"Initialized TerminologyValidator with {len(self.all_sarsekenov_terms)} Sarsekenov terms")
         logger.info(f"Forbidden terms: {len(self.forbidden_terms)}")
-        logger.info(f"Pymorphy2 available: {PYMORPHY_AVAILABLE}")
+        logger.info(f"Validation mode: {self.validation_mode}")
+        logger.info(f"Min density (smart): {self.min_density_smart:.0%}, (strict): {self.min_density_strict:.0%}")
+        logger.info(f"Pymorphy available: {PYMORPHY_AVAILABLE}")
     
     def _load_sarsekenov_terms(self) -> Dict:
         """Загрузка терминов Сарсекенова из JSON"""
@@ -151,57 +175,185 @@ class TerminologyValidator:
     def validate_text(
         self, 
         text: str, 
-        min_density: float = 0.25,
-        strict_mode: bool = True
+        min_density: Optional[float] = None,
+        validation_mode: Optional[str] = None
     ) -> ValidationResult:
         """
         Валидация текста на соответствие стандартам Сарсекенова.
         
+        Поддерживает 4 режима:
+        - smart (рекомендуемый): только проверка плотности ≥15%, forbidden игнорируются
+        - soft: пропускает forbidden в объяснительном контексте
+        - strict: блокирует любые forbidden terms
+        - off: только проверка плотности
+        
         Args:
             text: Текст для валидации
-            min_density: Минимальная плотность терминов Сарсекенова (0.25 = 25%)
-            strict_mode: Строгий режим (отклонять при наличии запрещенных терминов)
+            min_density: Минимальная плотность (None = автоопределение по режиму)
+            validation_mode: Режим валидации (None = из настроек)
         
         Returns:
             ValidationResult с детальной информацией
         """
         
-        # Шаг 1: Проверка на запрещенные термины
-        forbidden_found = self._find_forbidden_terms(text)
+        # Определение режима валидации
+        mode = validation_mode or self.validation_mode
         
-        if strict_mode and forbidden_found:
-            return ValidationResult(
-                is_valid=False,
-                reason=f"Найдены запрещенные термины: {', '.join(forbidden_found)}",
-                metrics={},
-                forbidden_terms_found=forbidden_found,
-                sarsekenov_entities=[]
-            )
+        # Определение минимальной плотности в зависимости от режима
+        if min_density is None:
+            if mode in ["smart", "off"]:
+                min_density = self.min_density_smart  # 0.15
+            else:
+                min_density = self.min_density_strict  # 0.25
         
-        # Шаг 2: Расчет плотности терминов Сарсекенова
+        logger.debug(f"Validating text with mode={mode}, min_density={min_density:.0%}")
+        
+        # ШАГ 1: Расчёт плотности терминов Сарсекенова (ВСЕГДА)
         density_metrics = self._calculate_density(text)
         
-        # Шаг 3: Извлечение сущностей
+        # ШАГ 2: Извлечение сущностей (ВСЕГДА)
         entities = self._extract_entities(text)
         
-        # Шаг 4: Проверка минимальной плотности
+        # ШАГ 3: Поиск forbidden terms (ВСЕГДА - для статистики)
+        forbidden_found = self._find_forbidden_terms(text)
+        
+        # ШАГ 4: В STRICT режиме сначала проверяем forbidden terms
+        if mode == "strict" and forbidden_found:
+            logger.warning(f"Text rejected (strict): forbidden terms found: {forbidden_found}")
+            return ValidationResult(
+                is_valid=False,
+                reason=f"❌ Найдены запрещённые термины: {', '.join(forbidden_found)}",
+                metrics=density_metrics,
+                forbidden_terms_found=forbidden_found,
+                sarsekenov_entities=entities,
+                is_contextual=False
+            )
+        
+        # ШАГ 5: Проверка минимальной плотности (ВСЕГДА)
         if density_metrics['density'] < min_density:
+            logger.info(f"Text rejected: density {density_metrics['density']:.1%} < {min_density:.1%}")
             return ValidationResult(
                 is_valid=False,
                 reason=f"Недостаточная плотность терминов Сарсекенова: {density_metrics['density']:.1%} < {min_density:.1%}",
                 metrics=density_metrics,
                 forbidden_terms_found=forbidden_found,
-                sarsekenov_entities=entities
+                sarsekenov_entities=entities,
+                is_contextual=False
             )
         
-        # Шаг 5: Успешная валидация
+        # РЕЖИМ: SMART или OFF
+        if mode in ["smart", "off"]:
+            # SMART/OFF: Игнорируем forbidden terms полностью
+            logger.info(f"Text accepted (mode={mode}): density {density_metrics['density']:.1%}, forbidden terms ignored")
+            return ValidationResult(
+                is_valid=True,
+                reason=f"✅ Валидный текст Сарсекенова (плотность: {density_metrics['density']:.1%}, режим: {mode})",
+                metrics=density_metrics,
+                forbidden_terms_found=forbidden_found,  # Сохраняем для статистики
+                sarsekenov_entities=entities,
+                is_contextual=False
+            )
+        
+        # РЕЖИМ: STRICT - уже проверен выше (шаг 4), если дошли сюда - forbidden не найдены
+        elif mode == "strict":
+            # Forbidden terms не найдены, плотность достаточная
+            pass  # Переходим к успешной валидации
+        
+        # РЕЖИМ: SOFT
+        elif mode == "soft":
+            if forbidden_found:
+                is_contextual = self._is_contextual_usage(
+                    text,
+                    forbidden_found,
+                    density_metrics
+                )
+                
+                if not is_contextual:
+                    logger.warning(f"Text rejected (soft): forbidden terms without context")
+                    return ValidationResult(
+                        is_valid=False,
+                        reason=f"❌ Найдены запрещённые термины вне контекста: {', '.join(forbidden_found)}",
+                        metrics=density_metrics,
+                        forbidden_terms_found=forbidden_found,
+                        sarsekenov_entities=entities,
+                        is_contextual=False
+                    )
+                else:
+                    logger.info(f"Text accepted (soft): forbidden terms in explanatory context")
+                    return ValidationResult(
+                        is_valid=True,
+                        reason=f"✅ Валидный текст (forbidden terms в контексте объяснения)",
+                        metrics=density_metrics,
+                        forbidden_terms_found=forbidden_found,
+                        sarsekenov_entities=entities,
+                        is_contextual=True
+                    )
+        
+        # По умолчанию: Успешная валидация
+        logger.info(f"Text accepted: density {density_metrics['density']:.1%}")
         return ValidationResult(
             is_valid=True,
-            reason=f"Валидный текст Сарсекенова (плотность: {density_metrics['density']:.1%})",
+            reason=f"✅ Валидный текст Сарсекенова (плотность: {density_metrics['density']:.1%})",
             metrics=density_metrics,
             forbidden_terms_found=forbidden_found,
-            sarsekenov_entities=entities
+            sarsekenov_entities=entities,
+            is_contextual=False
         )
+    
+    def _is_contextual_usage(
+        self,
+        text: str,
+        forbidden_terms: List[str],
+        density_metrics: Dict
+    ) -> bool:
+        """
+        Проверка, используются ли forbidden terms в объяснительном контексте.
+        
+        Критерии контекстного использования:
+        1. Высокая плотность терминов Сарсекенова (≥35%)
+        2. Рядом есть термины-замены
+        3. Присутствуют маркеры объяснения
+        
+        Returns:
+            True если использование контекстное/объяснительное
+        """
+        
+        # Критерий 1: Высокая плотность = вероятно объяснительный контекст
+        if density_metrics['density'] >= self.contextual_threshold:
+            return True
+        
+        # Критерий 2: Термины-замены рядом с forbidden
+        replacements = self.forbidden_config.get('replacements', {})
+        
+        for forbidden in forbidden_terms:
+            replacement = replacements.get(forbidden)
+            if replacement and replacement.lower() in text.lower():
+                # Проверка близости (в пределах 100 символов)
+                forbidden_pos = text.lower().find(forbidden.lower())
+                replacement_pos = text.lower().find(replacement.lower())
+                
+                if abs(forbidden_pos - replacement_pos) < 100:
+                    return True
+        
+        # Критерий 3: Маркеры объяснения
+        explanation_markers = [
+            "имею в виду", "на самом деле", "это называется",
+            "вместо", "заменить на", "правильнее говорить",
+            "не", "отличие", "разница", "объясняю"
+        ]
+        
+        text_lower = text.lower()
+        for marker in explanation_markers:
+            if marker in text_lower:
+                # Проверка близости маркера к forbidden term
+                for forbidden in forbidden_terms:
+                    marker_pos = text_lower.find(marker)
+                    forbidden_pos = text_lower.find(forbidden.lower())
+                    
+                    if abs(marker_pos - forbidden_pos) < 50:
+                        return True
+        
+        return False
     
     def _find_forbidden_terms(self, text: str) -> List[str]:
         """Найти запрещенные термины в тексте."""

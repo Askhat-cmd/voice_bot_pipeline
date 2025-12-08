@@ -48,7 +48,7 @@ def test_valid_sarsekenov_text(validator):
 
 
 def test_invalid_forbidden_terms(validator):
-    """Тест: текст с запрещенными терминами отклоняется"""
+    """Тест: текст с запрещенными терминами отклоняется (в STRICT режиме)"""
     
     text = """
     Клиент испытывает стресс из-за активности эго.
@@ -56,7 +56,7 @@ def test_invalid_forbidden_terms(validator):
     Рекомендуется медитация для работы с тревогой.
     """
     
-    result = validator.validate_text(text, strict_mode=True)
+    result = validator.validate_text(text, validation_mode="strict")
     
     assert result.is_valid == False
     assert len(result.forbidden_terms_found) > 0
@@ -83,7 +83,7 @@ def test_low_density_text(validator):
 
 
 def test_mixed_content(validator):
-    """Тест: смешанный контент с достаточной плотностью проходит"""
+    """Тест: смешанный контент с достаточной плотностью проходит (SMART режим)"""
     
     text = """
     В процессе работы с человеком важно понимать, как работает метанаблюдение.
@@ -92,7 +92,7 @@ def test_mixed_content(validator):
     Этот путь ведет к пробуждению сознания через центрирование на присутствии.
     """
     
-    result = validator.validate_text(text, min_density=0.25, strict_mode=False)
+    result = validator.validate_text(text, validation_mode="smart")
     
     assert result.is_valid == True
     
@@ -168,6 +168,158 @@ def test_utility_function():
     print(f"Utility функция работает, is_valid={result.is_valid}")
 
 
+# =============================================================
+# НОВЫЕ ТЕСТЫ: SMART РЕЖИМ ВАЛИДАЦИИ
+# =============================================================
+
+def test_smart_mode_ignores_forbidden(validator):
+    """
+    SMART режим: Пропускает forbidden terms если плотность ≥15%
+    
+    Это ключевой тест - показывает, что SMART режим позволяет
+    сохранить ~95% контента лекций вместо ~40% в strict режиме.
+    """
+    text = """
+    Человек приходит с тревогой и говорит про эго и подсознание.
+    Я объясняю: это не эго, это Я-образ. Метанаблюдение за Я-образом
+    в поле внимания ведёт к разотождествлению. Ищущий замечает
+    автоматизмы психики и захват внимания Я-образом.
+    Через свободное внимание возникает чистое осознавание.
+    """
+    
+    result = validator.validate_text(text, validation_mode="smart")
+    
+    assert result.is_valid == True
+    assert len(result.forbidden_terms_found) > 0  # Найдены но не блокируют
+    assert result.metrics['density'] >= 0.15
+    
+    print(f"✅ SMART: плотность {result.metrics['density']:.1%}, "
+          f"forbidden найдено: {len(result.forbidden_terms_found)}, текст ПРОПУЩЕН")
+
+
+def test_smart_mode_blocks_low_density(validator):
+    """
+    SMART режим: Блокирует низкую плотность <15%
+    
+    Даже в SMART режиме текст без достаточного количества
+    терминов Сарсекенова будет отклонён.
+    """
+    text = """
+    Эго, подсознание, тревога, стресс. Медитация помогает людям.
+    Психотерапия работает хорошо. Клиент доволен результатами.
+    Иногда упомяну метанаблюдение для полноты.
+    """
+    
+    result = validator.validate_text(text, validation_mode="smart")
+    
+    assert result.is_valid == False
+    assert result.metrics['density'] < 0.15
+    
+    print(f"❌ SMART: плотность {result.metrics['density']:.1%} < 15%, текст ЗАБЛОКИРОВАН")
+
+
+def test_strict_mode_blocks_forbidden_even_with_high_density(validator):
+    """
+    STRICT режим: Блокирует forbidden terms даже при высокой плотности
+    
+    Демонстрирует разницу между SMART и STRICT режимами.
+    """
+    text = """
+    Метанаблюдение за Я-образом через разотождествление.
+    Поле внимания расширяется, свободное внимание возникает.
+    Но люди говорят "эго" и "медитация" по привычке.
+    Ищущий практикует центрирование на присутствии.
+    """
+    
+    result = validator.validate_text(text, validation_mode="strict")
+    
+    assert result.is_valid == False  # Заблокировано из-за forbidden
+    assert result.metrics['density'] >= 0.25
+    assert len(result.forbidden_terms_found) > 0
+    
+    print(f"❌ STRICT: плотность {result.metrics['density']:.1%}, "
+          f"но forbidden найдено → ЗАБЛОКИРОВАНО")
+
+
+def test_soft_mode_contextual_usage(validator):
+    """
+    SOFT режим: Пропускает forbidden terms в объяснительном контексте
+    
+    Проверяет, что forbidden terms около терминов-замен проходят.
+    """
+    text = """
+    Люди говорят "эго", но на самом деле это Я-образ.
+    Метанаблюдение за Я-образом через разотождествление.
+    Поле внимания расширяется, возникает чистое осознавание.
+    Ищущий практикует центрирование на присутствии.
+    """
+    
+    result = validator.validate_text(text, validation_mode="soft")
+    
+    # Высокая плотность + контекст объяснения = пропускаем
+    assert result.metrics['density'] >= 0.25
+    
+    print(f"SOFT: плотность {result.metrics['density']:.1%}, "
+          f"forbidden={len(result.forbidden_terms_found)}, "
+          f"contextual={result.is_contextual}, valid={result.is_valid}")
+
+
+def test_mode_comparison_same_text(validator):
+    """
+    Сравнение всех режимов на одном тексте
+    
+    Показывает, как один и тот же текст обрабатывается в разных режимах.
+    """
+    text = """
+    Человек с тревогой говорит: "Моё эго меня разрушает."
+    Я объясняю: это Я-образ. Метанаблюдение за Я-образом
+    в поле внимания ведёт к разотождествлению. Ищущий видит
+    автоматизмы психики и практикует центрирование на присутствии.
+    """
+    
+    results = {
+        "smart": validator.validate_text(text, validation_mode="smart"),
+        "soft": validator.validate_text(text, validation_mode="soft"),
+        "strict": validator.validate_text(text, validation_mode="strict"),
+        "off": validator.validate_text(text, validation_mode="off")
+    }
+    
+    print("\n" + "=" * 60)
+    print("СРАВНЕНИЕ РЕЖИМОВ НА ОДНОМ ТЕКСТЕ")
+    print("=" * 60)
+    
+    for mode, result in results.items():
+        status = "✅ VALID" if result.is_valid else "❌ INVALID"
+        print(f"{mode.upper():8} {status:12} density={result.metrics['density']:.1%} "
+              f"forbidden={len(result.forbidden_terms_found)}")
+    
+    print("=" * 60)
+    
+    # SMART и OFF должны пропустить
+    assert results["smart"].is_valid == True
+    assert results["off"].is_valid == True
+    # STRICT должен заблокировать (forbidden terms)
+    assert results["strict"].is_valid == False
+
+
+def test_validation_result_has_is_contextual(validator):
+    """
+    Тест: ValidationResult содержит поле is_contextual
+    """
+    text = """
+    Метанаблюдение за Я-образом ведет к разотождествлению.
+    Поле внимания расширяется, чистое осознавание возникает.
+    """
+    
+    result = validator.validate_text(text)
+    
+    # Проверяем наличие нового поля
+    assert hasattr(result, 'is_contextual')
+    assert isinstance(result.is_contextual, bool)
+    
+    print(f"✅ ValidationResult.is_contextual = {result.is_contextual}")
+
+
 if __name__ == "__main__":
     # Запуск тестов вручную
     validator = TerminologyValidator()
@@ -194,6 +346,35 @@ if __name__ == "__main__":
     print("\n6. test_get_term_info")
     test_get_term_info(validator)
     
+    print("\n7. test_mixed_content")
+    test_mixed_content(validator)
+    
+    print("\n8. test_utility_function")
+    test_utility_function()
+    
+    # НОВЫЕ ТЕСТЫ SMART РЕЖИМА
     print("\n" + "=" * 60)
-    print("ВСЕ ТЕСТЫ ПРОЙДЕНЫ!")
+    print("НОВЫЕ ТЕСТЫ: SMART РЕЖИМ")
+    print("=" * 60)
+    
+    print("\n9. test_smart_mode_ignores_forbidden")
+    test_smart_mode_ignores_forbidden(validator)
+    
+    print("\n10. test_smart_mode_blocks_low_density")
+    test_smart_mode_blocks_low_density(validator)
+    
+    print("\n11. test_strict_mode_blocks_forbidden_even_with_high_density")
+    test_strict_mode_blocks_forbidden_even_with_high_density(validator)
+    
+    print("\n12. test_soft_mode_contextual_usage")
+    test_soft_mode_contextual_usage(validator)
+    
+    print("\n13. test_mode_comparison_same_text")
+    test_mode_comparison_same_text(validator)
+    
+    print("\n14. test_validation_result_has_is_contextual")
+    test_validation_result_has_is_contextual(validator)
+    
+    print("\n" + "=" * 60)
+    print("ВСЕ ТЕСТЫ ЗАВЕРШЕНЫ!")
     print("=" * 60)

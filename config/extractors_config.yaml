@@ -1,9 +1,22 @@
 # Конфигурация системы экстракторов Сарсекенова
 
 terminology:
-  strict_mode: true
+  # Режим валидации (smart рекомендуется для продакшена)
+  # smart - только плотность ≥15%, forbidden игнорируются
+  # soft - пропускает forbidden в объяснительном контексте
+  # strict - блокирует любые forbidden terms
+  # off - только плотность, никаких ограничений
+  validation_mode: smart
+  
+  # Пороги плотности по режимам
+  min_density_smart: 0.15      # для smart/off режимов
+  min_density_strict: 0.25     # для strict/soft режимов
+  contextual_threshold: 0.35   # для soft режима (контекстные проверки)
+  
+  # Устаревшие параметры (сохранены для совместимости)
+  strict_mode: false
   min_density: 0.25
-  allow_mixed_content: false
+  allow_mixed_content: true
   case_sensitive: false
 
 extractors:
