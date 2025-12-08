@@ -19,7 +19,6 @@
 ```
 voice_bot_pipeline/
 ├── config/
-│   └── terminology/          # Словари терминологии
 ├── text_processor/
 │   ├── extractors/           # Будущие экстракторы
 │   └── validators/           # Валидаторы
@@ -636,12 +635,97 @@ CausalChainExtractor
 
 ---
 
+## Этап 4: ConceptHierarchyExtractor
+
+**Статус:** Завершён
+
+**Дата:** 2024-12-08
+
+### Файл: `text_processor/extractors/concept_hierarchy_extractor.py`
+
+**Назначение:** Извлечение иерархии концептов учения Саламата Сарсекенова со строгой 5-уровневой структурой.
+
+### Философия
+
+**Строгая иерархия** от корня до конкретных упражнений, подобно организационной структуре.
+
+### Ключевые компоненты
+
+#### 1. Уровни иерархии
+
+| Уровень | Описание | Примеры |
+|---------|----------|---------|
+| `root` | Корень учения | нейро-сталкинг |
+| `domain` | Доменная область | поле внимания, чистое осознавание |
+| `practice` | Практика | метанаблюдение, разотождествление |
+| `technique` | Техника | наблюдение мыслительного потока |
+| `exercise` | Упражнение | 5-минутное наблюдение |
+
+#### 2. Dataclasses
+
+```python
+@dataclass
+class ConceptNode:
+    name: str
+    level: str                   # root/domain/practice/technique/exercise
+    parent: Optional[str]        # Родительский концепт
+    relation_type: str           # is_core_component_of, is_practice_for...
+    # ...и другие поля
+
+@dataclass
+class ConceptHierarchy:
+    root: ConceptNode
+    domains: List[ConceptNode]
+    practices: List[ConceptNode]
+    techniques: List[ConceptNode]
+    exercises: List[ConceptNode]
+    cross_connections: List[CrossConnection]
+    # ...метрики
+```
+
+### Алгоритм извлечения
+
+```
+1. ВАЛИДАЦИЯ через TerminologyValidator
+   
+2. ОПРЕДЕЛЕНИЕ ROOT (нейро-сталкинг/нео-сталкинг)
+   
+3. ИЗВЛЕЧЕНИЕ УРОВНЕЙ (Rule-based)
+   └── Domain: "поле внимания" -> is_core_component_of -> Root
+   └── Practice: "метанаблюдение" -> is_practice_for -> Domain
+   └── Technique: "наблюдение мыслительного потока" -> is_technique_for -> Practice
+   └── Exercise: "5 минут..." -> is_exercise_for -> Technique
+   
+4. ИЗВЛЕЧЕНИЕ СВЯЗЕЙ (Cross-connections)
+   └── enables, requires, leads_to
+   
+5. ВАЛИДАЦИЯ ИЕРАРХИИ
+   └── Проверка связности и наличия родителей
+```
+
+### Тесты: `tests/extractors/test_concept_hierarchy_extractor.py`
+
+| Тест | Описание | Результат |
+|------|----------|-----------|
+| test_strict_5_level_hierarchy | Строгая 5-уровневая структура | ✅ |
+| test_root_must_be_allowed | Проверка допустимых корней | ✅ |
+| test_parent_child_relationships | Связность родителей и детей | ✅ |
+| test_cross_connections_extracted | Горизонтальные связи | ✅ |
+| test_exercises_with_duration_frequency | Параметры упражнений | ✅ |
+| test_minimum_sarsekenov_terms | Минимальная плотность | ✅ |
+| test_utility_function | Utility функция | ✅ |
+| test_smart_mode_validation | Работа в SMART режиме | ✅ |
+
+**Результат:** 8 ТЕСТОВ ПРОЙДЕНЫ
+
+---
+
 ## Следующие этапы
 
 - [x] **Этап 1:** TerminologyValidator
 - [x] **Этап 2:** NeurostalkingPatternExtractor
-- [x] **Этап 3:** CausalChainExtractor (с валидацией) ✅ NEW
-- [ ] **Этап 4:** ConceptHierarchyExtractor (с валидацией)
+- [x] **Этап 3:** CausalChainExtractor (с валидацией)
+- [x] **Этап 4:** ConceptHierarchyExtractor (с валидацией) ✅ NEW
 - [ ] **Этап 5:** Интеграция с оркестратором
 
 ---
@@ -653,7 +737,7 @@ pymorphy3>=1.0.0
 python-dotenv>=1.0.0  # для загрузки настроек из .env
 ```
 
-## Структура проекта после Этапа 3
+## Структура проекта после Этапа 4
 
 ```
 voice_bot_pipeline/
@@ -670,12 +754,13 @@ voice_bot_pipeline/
 │   └── extractors/
 │       ├── __init__.py
 │       ├── neurostalking_pattern_extractor.py
-│       └── causal_chain_extractor.py          # ✅ NEW (Этап 3)
+│       ├── causal_chain_extractor.py
+│       └── concept_hierarchy_extractor.py     # ✅ NEW (Этап 4)
 └── tests/
     ├── __init__.py
     └── extractors/
         ├── __init__.py
         ├── test_terminology_validator.py
         ├── test_neurostalking_pattern_extractor.py
-        └── test_causal_chain_extractor.py     # ✅ NEW (Этап 3)
-```
+        ├── test_causal_chain_extractor.py
+        └── test_concept_hierarchy_extractor.py # ✅ NEW (Этап 4)
