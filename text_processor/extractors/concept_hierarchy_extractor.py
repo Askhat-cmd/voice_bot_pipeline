@@ -82,6 +82,7 @@ class ConceptHierarchyExtractor:
     # Hardcoded techniques from specification (since they are missing in JSON)
     TECHNIQUE_CONCEPTS = [
         "наблюдение мыслительного потока",
+        "наблюдение за мыслительным потоком",
         "отслеживание автоматизмов",
         "остановка внутреннего диалога",
         "центрирование на дыхании",
@@ -471,14 +472,19 @@ class ConceptHierarchyExtractor:
         """
         exercises = []
         
-        exercise_markers = ["практикуй", "делай", "попробуй", "упражнение", "тренируй"]
+        exercise_markers = ["практикуй", "делай", "попробуй", "упражнение", "тренируй", "выполняй", "наблюдай"]
         
-        for sentence in sentences:
+        for i, sentence in enumerate(sentences):
             sentence_lower = sentence.lower()
             
             # Проверка наличия маркера И термина родителя
             if any(marker in sentence_lower for marker in exercise_markers):
-                if parent_technique.name.lower() in sentence_lower:
+                # Check current sentence OR previous sentence for technique name
+                is_related = parent_technique.name.lower() in sentence_lower
+                if not is_related and i > 0:
+                    is_related = parent_technique.name.lower() in sentences[i-1].lower()
+                
+                if is_related:
                     
                     # Генерация имени упражнения
                     exercise_name = f"Упражнение для {parent_technique.name}"
