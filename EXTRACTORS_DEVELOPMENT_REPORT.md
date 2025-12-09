@@ -764,3 +764,42 @@ voice_bot_pipeline/
         ├── test_neurostalking_pattern_extractor.py
         ├── test_causal_chain_extractor.py
         └── test_concept_hierarchy_extractor.py # ✅ NEW (Этап 4)
+
+## Этап 5: SarsekenovProcessor (Оркестратор)
+
+**Статус:** Завершён ✅
+**Дата:** 2025-12-09
+
+### Файлы
+- `voice_bot_pipeline/text_processor/orchestrator/sarsekenov_processor.py`
+- `voice_bot_pipeline/text_processor/orchestrator/knowledge_graph.py`
+- `voice_bot_pipeline/text_processor/export/rag_formatter.py`
+- `voice_bot_pipeline/text_processor/extractors/__init__.py`
+
+### Описание
+Реализован **оркестратор**, который координирует работу всех экстракторов (валидатор, паттерны, цепочки, иерархия) и объединяет их результаты в единый **Граф Знаний** (Knowledge Graph). Также создан модуль экспорта для подготовки данных к загрузке в RAG-систему.
+
+### Ключевые достижения
+1. **SarsekenovProcessor**:
+   - Единая точка входа `process_text()`.
+   - Автоматическая валидация и координация экстракторов.
+   - Построение графа из разрозненных результатов.
+   - API для бота: `find_practices_for_symptom`, `recommend_exercise`.
+
+2. **KnowledgeGraph**:
+   - Хранение узлов (концепты, практики, техники) и связей.
+   - Поддержка слияния узлов при обработке нескольких текстов (исправлен баг дубликатов).
+   - Поиск путей и построение цепочек рассуждений (reasoning chains).
+
+3. **RAGFormatter**:
+   - Преобразование графа в документы для векторной БД.
+   - Сохранение богатых метаданных (tier, confidence, связи).
+   - Поддержка форматов для E5 моделей.
+
+### Тестирование
+- ✅ **32 теста** успешно пройдены (`tests/orchestrator/`).
+- Проверена обработка одиночных и множественных текстов.
+- Проверена корректность построения связей и слияния узлов.
+- Проверен экспорт в JSON и форматы для эмбеддинга.
+
+---

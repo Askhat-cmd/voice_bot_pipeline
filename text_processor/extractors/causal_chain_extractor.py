@@ -21,7 +21,7 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 
-from text_processor.validators.terminology_validator import (
+from voice_bot_pipeline.text_processor.validators.terminology_validator import (
     TerminologyValidator,
     ValidationResult
 )
