@@ -1,0 +1,49 @@
+[
+  {
+    "youtube_url": "https://youtu.be/5BIF9ggDkWw?si=DB_5EAECtv_0m70_",
+    "custom_name": null,
+    "pipeline_start": "2025-12-09 12:23:23",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.4725053310394287,
+        "json_path": "data\\raw_subtitles\\2025\\06\\2025-06-05_5BIF9ggDkWw_Как_возникает_ощущение_что_ты_один.json",
+        "srt_path": "data\\raw_subtitles\\2025\\06\\2025-06-05_5BIF9ggDkWw_Как_возникает_ощущение_что_ты_один.srt",
+        "txt_path": "data\\raw_subtitles\\2025\\06\\2025-06-05_5BIF9ggDkWw_Как_возникает_ощущение_что_ты_один.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 162.40753841400146,
+        "sag_v2_output": "data\\sag_final\\2025\\06\\2025-06-05_5BIF9ggDkWw_Как_возникает_ощущение_что_ты_один.for_vector.json",
+        "review_markdown": "data\\sag_final\\2025\\06\\2025-06-05_5BIF9ggDkWw_Как_возникает_ощущение_что_ты_один.for_review.md",
+        "blocks_created": 4,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 1.5528919696807861,
+        "indexed": {
+          "documents": 1,
+          "blocks": 4,
+          "graph_entities": 20
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "5BIF9ggDkWw",
+    "total_duration": 164.5671684741974,
+    "pipeline_end": "2025-12-09 12:26:07",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2025\\06\\2025-06-05_5BIF9ggDkWw_Как_возникает_ощущение_что_ты_один.for_vector.json",
+      "review_markdown": "data\\sag_final\\2025\\06\\2025-06-05_5BIF9ggDkWw_Как_возникает_ощущение_что_ты_один.for_review.md"
+    },
+    "blocks_created": 4,
+    "entities_extracted": 25
+  }
+]

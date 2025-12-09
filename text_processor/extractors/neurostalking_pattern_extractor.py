@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
-from voice_bot_pipeline.text_processor.validators.terminology_validator import (
+from ..validators.terminology_validator import (
     TerminologyValidator,
     ValidationResult
 )

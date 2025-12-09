@@ -14,13 +14,13 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 import uuid
 
-from voice_bot_pipeline.text_processor.validators import TerminologyValidator
-from voice_bot_pipeline.text_processor.extractors import (
+from ..validators import TerminologyValidator
+from ..extractors import (
     NeurostalkingPatternExtractor,
     CausalChainExtractor,
     ConceptHierarchyExtractor
 )
-from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph import (
+from .knowledge_graph import (
     KnowledgeGraph,
     GraphNode,
     GraphEdge,

@@ -32,11 +32,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from env_utils import load_env
 from subtitle_extractor.get_subtitles import YouTubeSubtitlesExtractor
-from .safety_extractor import SafetyInformationExtractor
-from .causal_chain_extractor import CausalChainExtractor
-from .concept_hierarchy_extractor import ConceptHierarchyExtractor
-from .case_study_extractor import CaseStudyExtractor
-from .prerequisite_extractor import PrerequisiteExtractor
+from .extractors import (
+    SafetyInformationExtractor,
+    CausalChainExtractor,
+    ConceptHierarchyExtractor,
+    CaseStudyExtractor,
+    PrerequisiteExtractor
+)
 
 
 def _hms(seconds: Optional[float]) -> Optional[str]:
@@ -78,13 +80,13 @@ class SarsekenovProcessor:
         ) if sag_config.get('use_safety_extractor', True) else None
         
         self.causal_extractor = CausalChainExtractor(
-            client=self.client,
-            model=models_config.get('causal', 'gpt-4o-mini')
+            llm_client=self.client,
+            use_llm=True
         ) if sag_config.get('use_causal_chain_extractor', True) else None
         
         self.hierarchy_extractor = ConceptHierarchyExtractor(
-            client=self.client,
-            model=models_config.get('hierarchy', 'gpt-4o-mini')
+            llm_client=self.client,
+            use_llm=True
         ) if sag_config.get('use_concept_hierarchy_extractor', True) else None
         
         self.case_extractor = CaseStudyExtractor(

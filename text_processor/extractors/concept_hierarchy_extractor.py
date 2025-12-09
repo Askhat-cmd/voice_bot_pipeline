@@ -11,13 +11,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Union
 
-try:
-    from ..validators.terminology_validator import TerminologyValidator, ValidationResult
-except ImportError:
-    # Fallback for direct execution or different structure
-    import sys
-    sys.path.append(str(Path(__file__).resolve().parents[3]))
-    from voice_bot_pipeline.text_processor.validators.terminology_validator import TerminologyValidator, ValidationResult
+from ..validators.terminology_validator import TerminologyValidator, ValidationResult
 
 @dataclass
 class ConceptNode:
