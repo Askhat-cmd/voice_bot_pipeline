@@ -1,0 +1,49 @@
+[
+  {
+    "youtube_url": "https://youtu.be/izzQ_oPSPAc?si=nw44-D7ieADJOA2F",
+    "custom_name": null,
+    "pipeline_start": "2025-12-10 15:35:57",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.344224214553833,
+        "json_path": "data\\raw_subtitles\\2025\\12\\2025-12-09_izzQ_oPSPAc_Как_сделать_последний_шаг.json",
+        "srt_path": "data\\raw_subtitles\\2025\\12\\2025-12-09_izzQ_oPSPAc_Как_сделать_последний_шаг.srt",
+        "txt_path": "data\\raw_subtitles\\2025\\12\\2025-12-09_izzQ_oPSPAc_Как_сделать_последний_шаг.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 164.2961938381195,
+        "sag_v2_output": "data\\sag_final\\2025\\12\\2025-12-09_izzQ_oPSPAc_Как_сделать_последний_шаг.for_vector.json",
+        "review_markdown": "data\\sag_final\\2025\\12\\2025-12-09_izzQ_oPSPAc_Как_сделать_последний_шаг.for_review.md",
+        "blocks_created": 4,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 1.651991367340088,
+        "indexed": {
+          "documents": 1,
+          "blocks": 4,
+          "graph_entities": 22
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "izzQ_oPSPAc",
+    "total_duration": 166.4006769657135,
+    "pipeline_end": "2025-12-10 15:38:44",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2025\\12\\2025-12-09_izzQ_oPSPAc_Как_сделать_последний_шаг.for_vector.json",
+      "review_markdown": "data\\sag_final\\2025\\12\\2025-12-09_izzQ_oPSPAc_Как_сделать_последний_шаг.for_review.md"
+    },
+    "blocks_created": 4,
+    "entities_extracted": 32
+  }
+]

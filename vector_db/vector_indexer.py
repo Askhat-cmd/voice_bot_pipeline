@@ -69,6 +69,7 @@ class VectorIndexer:
             doc_metadata = {
                 "video_id": metadata.get("video_id", ""),
                 "document_title": document_title,
+                "published_date": metadata.get("published_date", ""),
                 "source_url": metadata.get("source_url", ""),
                 "language": metadata.get("language", "ru"),
                 "domain": metadata.get("domain", ""),
@@ -151,6 +152,7 @@ class VectorIndexer:
                     "block_id": block_id,
                     "video_id": video_id,
                     "document_title": document_title,
+                    "published_date": sag_data.get("document_metadata", {}).get("published_date", ""),
                     "start": block.get("start", ""),
                     "end": block.get("end", ""),
                     "block_type": block.get("block_type", ""),
@@ -259,6 +261,7 @@ class VectorIndexer:
                     "entity_name": entity,
                     "video_id": video_id,
                     "document_title": document_title,
+                    "published_date": sag_data.get("document_metadata", {}).get("published_date", ""),
                     "frequency": str(len(contexts)),
                     "domain": sag_data.get("document_metadata", {}).get("domain", ""),
                 }

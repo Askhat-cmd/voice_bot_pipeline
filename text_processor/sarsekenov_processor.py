@@ -1245,6 +1245,7 @@ class SarsekenovProcessor:
         
         return {
             "recording_date": None,
+            "published_date": self._extract_published_date(full_text),  # Добавлено для совместимости с ChromaDB
             "lecture_type": "seminar" if has_dialogue else "lecture",
             "has_dialogue": has_dialogue,
             "main_topics": main_topics,
@@ -1309,6 +1310,13 @@ class SarsekenovProcessor:
             return h * 60 + m + (1 if s > 0 else 0)
         except:
             return None
+
+    def _extract_published_date(self, full_text: str) -> Optional[str]:
+        """Пытается извлечь дату публикации из полного текста или возвращает текущую"""
+        import datetime
+        # В будущем можно добавить логику извлечения даты из текста
+        # Пока возвращаем текущую дату как заглушку, если дата не найдена
+        return datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # ---------------------- IO ---------------------- #
     def _load_config(self) -> dict:
