@@ -7,11 +7,11 @@ Orchestrator module - координация всех экстракторов.
 - NodeType, EdgeType: типы для графа
 """
 
-from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph_builder import (
+from .knowledge_graph_builder import (
     KnowledgeGraphBuilder,
     ProcessingResult
 )
-from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph import (
+from .knowledge_graph import (
     KnowledgeGraph,
     GraphNode,
     GraphEdge,

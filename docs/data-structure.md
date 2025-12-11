@@ -197,6 +197,10 @@ data/
 - `total_graph_relationships`: Общее количество отношений (259)
 - `processing_version`: Версия процессора
 - **🧠 `knowledge_graph`**: Полный Knowledge Graph со всеми узлами, связями и метаданными
+  - `edges[*].confidence`: Вес связи (вычисляется автоматически, диапазон [0.1, 1.0])
+  - `metadata.weight_statistics`: Статистика весов (min, max, avg, median)
+  - `metadata.weight_calculation_method`: Метод расчета весов ("combined")
+  - `metadata.weight_components`: Компоненты веса (frequency_weight, pmi_weight, distance_weight)
 
 ---
 

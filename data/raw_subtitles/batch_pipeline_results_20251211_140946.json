@@ -1,0 +1,40 @@
+[
+  {
+    "youtube_url": "https://youtu.be/nek8TMzuZ5s?si=hCU3xq94FWaZqAsE",
+    "custom_name": null,
+    "pipeline_start": "2025-12-11 14:07:35",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.3411133289337158,
+        "json_path": "data\\raw_subtitles\\2025\\06\\2025-06-12_nek8TMzuZ5s_Тонкая_Грань_Бытия_Как_не_упасть.json",
+        "srt_path": "data\\raw_subtitles\\2025\\06\\2025-06-12_nek8TMzuZ5s_Тонкая_Грань_Бытия_Как_не_упасть.srt",
+        "txt_path": "data\\raw_subtitles\\2025\\06\\2025-06-12_nek8TMzuZ5s_Тонкая_Грань_Бытия_Как_не_упасть.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 129.58121848106384,
+        "sag_v2_output": "data\\sag_final\\2025\\06\\2025-06-12_nek8TMzuZ5s_Тонкая_Грань_Бытия_Как_не_упасть.for_vector.json",
+        "review_markdown": "data\\sag_final\\2025\\06\\2025-06-12_nek8TMzuZ5s_Тонкая_Грань_Бытия_Как_не_упасть.for_review.md",
+        "blocks_created": 3,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      }
+    },
+    "status": "success",
+    "video_id": "nek8TMzuZ5s",
+    "total_duration": 131.46690797805786,
+    "pipeline_end": "2025-12-11 14:09:46",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2025\\06\\2025-06-12_nek8TMzuZ5s_Тонкая_Грань_Бытия_Как_не_упасть.for_vector.json",
+      "review_markdown": "data\\sag_final\\2025\\06\\2025-06-12_nek8TMzuZ5s_Тонкая_Грань_Бытия_Как_не_упасть.for_review.md"
+    },
+    "blocks_created": 3,
+    "entities_extracted": 18
+  }
+]

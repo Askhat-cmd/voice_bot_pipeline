@@ -1557,8 +1557,30 @@ class SarsekenovProcessor:
         Returns:
             Dict с полным knowledge graph
         """
+        from .orchestrator.graph_weight_calculator import GraphWeightCalculator
+        
         nodes = {}  # name -> node_data
         edges = []  # список связей
+        
+        # Инициализация калькулятора весов
+        weight_calculator = GraphWeightCalculator()
+        
+        # Анализ всех блоков для сбора статистики позиций и co-occurrence
+        for idx, block in enumerate(blocks):
+            block_content = block.get('content', '')
+            block_entities = block.get('graph_entities', [])
+            # Преобразуем entities в список строк если нужно
+            entities_list = []
+            for entity in block_entities:
+                if isinstance(entity, (tuple, list)) and len(entity) >= 1:
+                    entities_list.append(str(entity[0]))
+                elif isinstance(entity, str):
+                    entities_list.append(entity)
+            
+            if block_content and entities_list:
+                weight_calculator.analyze_block(block_content, entities_list, idx)
+        
+        total_blocks = len(blocks)
         
         # Типы узлов
         NODE_TYPES = {
@@ -1704,11 +1726,16 @@ class SarsekenovProcessor:
                 # Добавляем связь с родителем
                 if parent and parent.strip():
                     edge_type = EDGE_TYPES.get(relationship, "IS_CORE_COMPONENT_OF")
+                    # Вычисляем вес для иерархических связей
+                    calculated_weight = weight_calculator.calculate_combined_weight(
+                        concept_name, parent, total_blocks
+                    )
                     add_edge(
                         concept_name,
                         parent,
                         edge_type=edge_type,
                         explanation=f"{concept_name} является частью {parent}",
+                        confidence=calculated_weight,
                         metadata={"source": "concept_hierarchy"}
                     )
         
@@ -1743,11 +1770,16 @@ class SarsekenovProcessor:
                     
                     # Связь между этапами
                     if prev_step_name:
+                        # Вычисляем вес для причинно-следственных связей
+                        calculated_weight = weight_calculator.calculate_combined_weight(
+                            prev_step_name, step_name, total_blocks
+                        )
                         add_edge(
                             prev_step_name,
                             step_name,
                             edge_type="LEADS_TO",
                             explanation=f"{prev_step_name} ведет к {step_name}",
+                            confidence=calculated_weight,
                             metadata={"source": "causal_chains", "process": chain_name}
                         )
                     
@@ -1768,11 +1800,16 @@ class SarsekenovProcessor:
                         )
                         
                         if after_step and prev_step_name:
+                            # Вычисляем вес для связей практик с этапами
+                            calculated_weight = weight_calculator.calculate_combined_weight(
+                                practice, prev_step_name, total_blocks
+                            )
                             add_edge(
                                 practice,
                                 prev_step_name,
                                 edge_type="ENABLES",
                                 explanation=intervention.get("effect", ""),
+                                confidence=calculated_weight,
                                 metadata={"source": "causal_chains_intervention"}
                             )
         
@@ -1803,11 +1840,16 @@ class SarsekenovProcessor:
                     prev_item_name = prev_item if isinstance(prev_item, str) else prev_item.get("concept", "")
                     
                     if curr_item and prev_item_name:
+                        # Вычисляем вес для связей предпосылок
+                        calculated_weight = weight_calculator.calculate_combined_weight(
+                            prev_item_name, curr_item, total_blocks
+                        )
                         add_edge(
                             prev_item_name,
                             curr_item,
                             edge_type="REQUIRES",
                             explanation=f"{prev_item_name} является предпосылкой для {curr_item}",
+                            confidence=calculated_weight,
                             metadata={"source": "prerequisites_sequence"}
                         )
         
@@ -1832,11 +1874,16 @@ class SarsekenovProcessor:
                     # Связи с концептами
                     for concept in concepts:
                         if isinstance(concept, str):
+                            # Вычисляем вес для связей кейсов с концептами
+                            calculated_weight = weight_calculator.calculate_combined_weight(
+                                situation, concept, total_blocks
+                            )
                             add_edge(
                                 situation,
                                 concept,
                                 edge_type="RELATED_TO",
                                 explanation=f"Кейс связан с концептом {concept}",
+                                confidence=calculated_weight,
                                 metadata={"source": "case_study"}
                             )
         
@@ -1862,14 +1909,17 @@ class SarsekenovProcessor:
                     }
                     
                     edge_type = edge_type_map.get(rel_type, "RELATED_TO")
-                    strength = rel.get("strength", 1.0)
+                    # Вычисляем вес связи вместо использования фиксированного strength
+                    calculated_weight = weight_calculator.calculate_combined_weight(
+                        source, target, total_blocks
+                    )
                     
                     add_edge(
                         source,
                         target,
                         edge_type=edge_type,
                         explanation=f"Семантическая связь: {rel_type}",
-                        confidence=strength,
+                        confidence=calculated_weight,
                         metadata={"source": "semantic_relationships", "rel_type": rel_type}
                     )
         
@@ -1886,14 +1936,37 @@ class SarsekenovProcessor:
         # Добавляем связи для часто встречающихся пар
         for (entity1, entity2), count in concept_cooccurrence.items():
             if count >= 2:  # Минимум 2 совместных появления
+                # Вычисляем вес на основе статистики
+                calculated_weight = weight_calculator.calculate_combined_weight(
+                    entity1, entity2, total_blocks
+                )
                 add_edge(
                     entity1,
                     entity2,
                     edge_type="RELATED_TO",
                     explanation=f"Часто встречаются вместе ({count} раз)",
-                    confidence=min(count / 5.0, 1.0),  # Нормализуем до 1.0
+                    confidence=calculated_weight,
                     metadata={"source": "cooccurrence", "frequency": count}
                 )
+        
+        # Вычисляем статистику весов связей
+        edge_weights = [edge.get("confidence", 1.0) for edge in edges]
+        weight_statistics = {}
+        if edge_weights:
+            sorted_weights = sorted(edge_weights)
+            weight_statistics = {
+                "min_weight": min(edge_weights),
+                "max_weight": max(edge_weights),
+                "avg_weight": sum(edge_weights) / len(edge_weights),
+                "median_weight": sorted_weights[len(sorted_weights) // 2] if sorted_weights else 0
+            }
+        else:
+            weight_statistics = {
+                "min_weight": 0,
+                "max_weight": 0,
+                "avg_weight": 0,
+                "median_weight": 0
+            }
         
         # Формируем финальную структуру
         return {
@@ -1905,6 +1978,7 @@ class SarsekenovProcessor:
                 "total_edges": len(edges),
                 "node_types": self._count_node_types_in_graph(nodes),
                 "edge_types": self._count_edge_types_in_graph(edges),
+                "weight_statistics": weight_statistics,
                 "sources": {
                     "graph_entities": sum(1 for n in nodes.values() if "graph_entities" in n.get("metadata", {}).get("source", "")),
                     "concept_hierarchy": sum(1 for n in nodes.values() if "concept_hierarchy" in n.get("metadata", {}).get("source", "")),

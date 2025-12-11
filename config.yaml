@@ -43,7 +43,7 @@ vector_db:
   collection_prefix: "sag_v2"
   
   # Автоматическая индексация после обработки
-  auto_index: true  # Установите true для автоматической индексации
+  auto_index: true  # Автоматическая индексация включена
   
   # Уровни индексации (documents, blocks, graph_entities, knowledge_graph)
   index_levels:

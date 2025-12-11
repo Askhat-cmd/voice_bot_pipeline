@@ -45,6 +45,14 @@
 - **test_sarsekenov_processor.py** (11 тестов): Полный workflow обработки, построение графа знаний, поиск практик для симптомов, рекомендации упражнений
 - **test_knowledge_graph.py** (12 тестов): Добавление узлов и связей, поиск путей между концептами, построение цепочек рассуждений, статистика графа
 - **test_rag_formatter.py** (10 тестов): Форматирование данных для RAG-систем, экспорт в JSON, подготовка для эмбеддингов
+- **test_graph_weights.py** (15+ тестов): Тесты для GraphWeightCalculator и проверки весов связей в Knowledge Graph
+  - Проверка расчета PMI (Pointwise Mutual Information)
+  - Проверка весов на основе расстояния между концептами
+  - Проверка комбинированного веса (frequency + PMI + distance)
+  - Проверка вариативности весов (не все 1.0)
+  - Проверка статистики весов в метаданных графа
+  - Проверка диапазона весов [0.1, 1.0]
+  - Интеграционные тесты полного pipeline с весами
 
 ### Интеграционные тесты (`tests/integration/`)
 
@@ -76,6 +84,9 @@ pytest tests/integration/ -v
 
 # Запуск тестов цепочек с реальными текстами
 python tests/extractors/run_causal_chain_tests.py
+
+# Запуск тестов весов связей в Knowledge Graph
+pytest tests/orchestrator/test_graph_weights.py -v
 ```
 
 ---
@@ -85,6 +96,7 @@ python tests/extractors/run_causal_chain_tests.py
 - **Экстракторы**: 100% покрытие основных функций
 - **Валидаторы**: 100% покрытие всех режимов работы
 - **Оркестратор**: Основные workflow покрыты тестами
+- **Knowledge Graph**: Тесты весов связей (PMI, co-occurrence, distance)
 - **Интеграция**: Полный pipeline протестирован на реальных данных
 
 ---
