@@ -293,6 +293,118 @@ class VectorIndexer:
             logger.error(f"Ошибка при индексации граф-сущностей: {e}", exc_info=True)
             return 0
     
+    def index_knowledge_graph(self, sag_data: Dict[str, Any]) -> int:
+        """
+        🚀 Индексирует Knowledge Graph (узлы и связи) для максимально полной базы знаний
+        
+        Args:
+            sag_data: Данные SAG v2.0 с knowledge_graph
+            
+        Returns:
+            Количество проиндексированных узлов графа
+        """
+        try:
+            knowledge_graph = sag_data.get("knowledge_graph")
+            if not knowledge_graph:
+                logger.warning("Knowledge Graph отсутствует в данных")
+                return 0
+            
+            collection = self.db_manager.get_or_create_collection(
+                name="knowledge_graph",
+                metadata={"description": "Knowledge Graph nodes and edges for AI bot"}
+            )
+            
+            nodes = knowledge_graph.get("nodes", [])
+            edges = knowledge_graph.get("edges", [])
+            video_id = sag_data.get("document_metadata", {}).get("video_id", "unknown")
+            
+            if not nodes:
+                logger.warning("Нет узлов в Knowledge Graph")
+                return 0
+            
+            # Создаем индекс связей для быстрого поиска
+            edges_by_node = {}
+            for edge in edges:
+                from_id = edge.get("from_id")
+                to_id = edge.get("to_id")
+                if from_id not in edges_by_node:
+                    edges_by_node[from_id] = []
+                edges_by_node[from_id].append(edge)
+            
+            # Подготовка данных для индексации узлов
+            texts_to_embed = []
+            node_ids = []
+            metadatas_list = []
+            
+            for node in nodes:
+                node_id = node.get("id", "")
+                node_name = node.get("name", "")
+                node_type = node.get("node_type", "CONCEPT")
+                description = node.get("description", "")
+                
+                # Собираем информацию о связях
+                outgoing_edges = edges_by_node.get(node_id, [])
+                connections_info = []
+                for edge in outgoing_edges[:5]:  # Максимум 5 связей в контексте
+                    target_node = next((n for n in nodes if n.get("id") == edge.get("to_id")), None)
+                    if target_node:
+                        connections_info.append(
+                            f"{edge.get('edge_type', 'RELATED_TO')}: {target_node.get('name', '')}"
+                        )
+                
+                # Формируем текст для эмбеддинга
+                connections_text = "\n".join(connections_info) if connections_info else "Нет связей"
+                text_to_embed = (
+                    f"Узел Knowledge Graph: {node_name}\n"
+                    f"Тип: {node_type}\n"
+                    f"Описание: {description}\n"
+                    f"Связи:\n{connections_text}"
+                ).strip()
+                
+                texts_to_embed.append(text_to_embed)
+                full_node_id = f"kg_node_{video_id}_{node_id}"
+                node_ids.append(full_node_id)
+                
+                # Метаданные узла
+                metadata = {
+                    "node_id": node_id,
+                    "node_name": node_name,
+                    "node_type": node_type,
+                    "video_id": video_id,
+                    "document_title": sag_data.get("document_title", ""),
+                    "description": description[:200] if description else "",  # Ограничение длины
+                    "connections_count": str(len(outgoing_edges)),
+                    "source": ",".join(node.get("metadata", {}).get("source", []) if isinstance(node.get("metadata", {}).get("source"), list) else [node.get("metadata", {}).get("source", "")])
+                }
+                metadatas_list.append(metadata)
+            
+            # Батч-создание эмбеддингов
+            embeddings = self.embedding_service.create_embeddings_batch(texts_to_embed)
+            
+            # Добавление в коллекцию
+            indexed_count = 0
+            for i in range(0, len(node_ids), self.batch_size):
+                batch_ids = node_ids[i:i + self.batch_size]
+                batch_embeddings = embeddings[i:i + self.batch_size]
+                batch_documents = texts_to_embed[i:i + self.batch_size]
+                batch_metadatas = metadatas_list[i:i + self.batch_size]
+                
+                collection.add(
+                    ids=batch_ids,
+                    embeddings=batch_embeddings,
+                    documents=batch_documents,
+                    metadatas=batch_metadatas
+                )
+                indexed_count += len(batch_ids)
+            
+            logger.info(f"✅ Проиндексировано узлов Knowledge Graph: {indexed_count}")
+            logger.info(f"📊 Всего связей в графе: {len(edges)}")
+            return indexed_count
+            
+        except Exception as e:
+            logger.error(f"Ошибка при индексации Knowledge Graph: {e}", exc_info=True)
+            return 0
+    
     def index_sag_file(self, json_path: Path, index_levels: List[str] = None) -> Dict[str, Any]:
         """
         Полная индексация SAG v2.0 JSON файла с мониторингом производительности
@@ -306,7 +418,7 @@ class VectorIndexer:
             Словарь с результатами индексации
         """
         if index_levels is None:
-            index_levels = ["documents", "blocks", "graph_entities"]
+            index_levels = ["documents", "blocks", "graph_entities", "knowledge_graph"]
         
         start_time = time.time()  # ⏱️ Начало отсчета
         
@@ -316,7 +428,8 @@ class VectorIndexer:
             "indexed": {
                 "documents": 0,
                 "blocks": 0,
-                "graph_entities": 0
+                "graph_entities": 0,
+                "knowledge_graph": 0
             }
         }
         
@@ -340,6 +453,11 @@ class VectorIndexer:
                 entities_count = self.index_graph_entities(sag_data)
                 results["indexed"]["graph_entities"] = entities_count
             
+            # 🚀 НОВОЕ: Индексация Knowledge Graph
+            if "knowledge_graph" in index_levels:
+                kg_nodes_count = self.index_knowledge_graph(sag_data)
+                results["indexed"]["knowledge_graph"] = kg_nodes_count
+            
             results["success"] = True
             
             # Подсчет времени и статистики
@@ -347,7 +465,8 @@ class VectorIndexer:
             total_items = sum([
                 results["indexed"]["documents"],
                 results["indexed"]["blocks"],
-                results["indexed"]["graph_entities"]
+                results["indexed"]["graph_entities"],
+                results["indexed"]["knowledge_graph"]
             ])
             
             logger.info(f"✅ Файл проиндексирован: {json_path.name}")

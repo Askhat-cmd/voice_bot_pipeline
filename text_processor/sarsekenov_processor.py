@@ -1530,6 +1530,587 @@ class SarsekenovProcessor:
         except Exception:
             return blocks
 
+    # ---------------------- Knowledge Graph Builder ---------------------- #
+    
+    def _build_knowledge_graph_from_blocks(
+        self, 
+        blocks: List[Dict[str, Any]], 
+        video_id: str,
+        document_entities: List[str]
+    ) -> Dict[str, Any]:
+        """
+        🚀 Построить максимально полный Knowledge Graph из всех данных экстракторов.
+        
+        Объединяет:
+        - graph_entities (rule-based извлечение)
+        - concept_hierarchy (иерархия концептов)
+        - causal_chains (причинно-следственные цепочки)
+        - prerequisites (предпосылки и последовательности)
+        - case_studies (кейсы и примеры)
+        - semantic_relationships (семантические связи)
+        
+        Args:
+            blocks: Список обработанных блоков
+            video_id: ID видео
+            document_entities: Все граф-сущности документа
+            
+        Returns:
+            Dict с полным knowledge graph
+        """
+        nodes = {}  # name -> node_data
+        edges = []  # список связей
+        
+        # Типы узлов
+        NODE_TYPES = {
+            "concept": "CONCEPT",
+            "domain": "CONCEPT",
+            "practice": "PRACTICE",
+            "technique": "TECHNIQUE",
+            "exercise": "EXERCISE",
+            "pattern": "PATTERN",
+            "process_stage": "PROCESS_STAGE",
+            "symptom": "CONCEPT",
+            "state": "CONCEPT"
+        }
+        
+        # Типы связей
+        EDGE_TYPES = {
+            "is_core_component_of": "IS_CORE_COMPONENT_OF",
+            "is_practice_for": "IS_PRACTICE_FOR",
+            "is_technique_for": "IS_TECHNIQUE_FOR",
+            "is_exercise_for": "IS_EXERCISE_FOR",
+            "enables": "ENABLES",
+            "requires": "REQUIRES",
+            "leads_to": "LEADS_TO",
+            "transforms_into": "TRANSFORMS_INTO",
+            "emerges_from": "EMERGES_FROM",
+            "related_to": "RELATED_TO",
+            "prerequisite_for": "REQUIRES",
+            "part_of": "IS_CORE_COMPONENT_OF"
+        }
+        
+        node_id_counter = 0
+        
+        def get_or_create_node(name: str, node_type: str = "CONCEPT", description: str = "", 
+                               metadata: Dict = None) -> str:
+            """Получить или создать узел, возвращает node_id"""
+            nonlocal node_id_counter
+            name_lower = name.lower().strip()
+            
+            if name_lower not in nodes:
+                node_id_counter += 1
+                node_id = f"node_{node_id_counter:04d}"
+                nodes[name_lower] = {
+                    "id": node_id,
+                    "name": name,
+                    "node_type": node_type,
+                    "description": description,
+                    "metadata": metadata or {},
+                    "sources": []  # Откуда извлечен узел
+                }
+            else:
+                # Обновляем описание если оно пустое
+                if not nodes[name_lower]["description"] and description:
+                    nodes[name_lower]["description"] = description
+                # Объединяем метаданные
+                if metadata:
+                    nodes[name_lower]["metadata"].update(metadata)
+            
+            return nodes[name_lower]["id"]
+        
+        def add_edge(from_name: str, to_name: str, edge_type: str, explanation: str = "", 
+                    confidence: float = 1.0, metadata: Dict = None):
+            """Добавить связь между узлами"""
+            from_id = get_or_create_node(from_name)
+            to_id = get_or_create_node(to_name)
+            
+            # Проверка дубликатов
+            for edge in edges:
+                if (edge["from_id"] == from_id and edge["to_id"] == to_id and 
+                    edge["edge_type"] == edge_type):
+                    return
+            
+            edges.append({
+                "from_id": from_id,
+                "to_id": to_id,
+                "from_name": from_name,
+                "to_name": to_name,
+                "edge_type": edge_type,
+                "explanation": explanation,
+                "confidence": confidence,
+                "metadata": metadata or {}
+            })
+        
+        # 1. ИЗВЛЕЧЕНИЕ УЗЛОВ ИЗ GRAPH_ENTITIES (rule-based)
+        for entity in document_entities:
+            # Обработка кортежей (name, count) или просто строк
+            if isinstance(entity, tuple) and len(entity) == 2:
+                entity_name, count = entity
+            elif isinstance(entity, list) and len(entity) == 2:
+                entity_name, count = entity[0], entity[1]
+            else:
+                entity_name = str(entity)
+                count = 1
+            
+            if not entity_name or not isinstance(entity_name, str):
+                continue
+            
+            # Определяем тип узла по контексту
+            node_type = "CONCEPT"
+            entity_lower = entity_name.lower()
+            if any(word in entity_lower for word in ["практика", "упражнение", "техника"]):
+                if "упражнение" in entity_lower:
+                    node_type = "EXERCISE"
+                elif "техника" in entity_lower:
+                    node_type = "TECHNIQUE"
+                else:
+                    node_type = "PRACTICE"
+            
+            get_or_create_node(
+                entity_name,
+                node_type=node_type,
+                metadata={"frequency": count, "source": "graph_entities"}
+            )
+        
+        # 2. ИЗВЛЕЧЕНИЕ ИЗ CONCEPT_HIERARCHY (иерархия концептов)
+        for block in blocks:
+            hierarchy = block.get("concept_hierarchy", [])
+            if not hierarchy:
+                continue
+            
+            for concept in hierarchy:
+                concept_name = concept.get("name", "").strip()
+                if not concept_name:
+                    continue
+                
+                level = concept.get("level", "concept")
+                node_type = NODE_TYPES.get(level, "CONCEPT")
+                description = concept.get("description", "")
+                parent = concept.get("parent", "")
+                relationship = concept.get("relationship", "")
+                
+                # Создаем узел концепта
+                concept_id = get_or_create_node(
+                    concept_name,
+                    node_type=node_type,
+                    description=description,
+                    metadata={
+                        "level": level,
+                        "source": "concept_hierarchy",
+                        "block_id": block.get("block_id", "")
+                    }
+                )
+                
+                # Добавляем связь с родителем
+                if parent and parent.strip():
+                    edge_type = EDGE_TYPES.get(relationship, "IS_CORE_COMPONENT_OF")
+                    add_edge(
+                        concept_name,
+                        parent,
+                        edge_type=edge_type,
+                        explanation=f"{concept_name} является частью {parent}",
+                        metadata={"source": "concept_hierarchy"}
+                    )
+        
+        # 3. ИЗВЛЕЧЕНИЕ ИЗ CAUSAL_CHAINS (причинно-следственные цепочки)
+        for block in blocks:
+            chains = block.get("causal_chains", [])
+            if not chains:
+                continue
+            
+            for chain in chains:
+                chain_name = chain.get("name", "")
+                steps = chain.get("steps", [])
+                
+                # Создаем узлы для этапов процесса
+                prev_step_name = None
+                for step in steps:
+                    step_name = step.get("event", "").strip() or step.get("stage_name", "").strip()
+                    if not step_name:
+                        continue
+                    
+                    step_id = get_or_create_node(
+                        step_name,
+                        node_type="PROCESS_STAGE",
+                        description=step.get("description", ""),
+                        metadata={
+                            "process": chain_name,
+                            "step_number": step.get("step", 0),
+                            "source": "causal_chains",
+                            "block_id": block.get("block_id", "")
+                        }
+                    )
+                    
+                    # Связь между этапами
+                    if prev_step_name:
+                        add_edge(
+                            prev_step_name,
+                            step_name,
+                            edge_type="LEADS_TO",
+                            explanation=f"{prev_step_name} ведет к {step_name}",
+                            metadata={"source": "causal_chains", "process": chain_name}
+                        )
+                    
+                    prev_step_name = step_name
+                
+                # Intervention points (точки вмешательства)
+                interventions = chain.get("intervention_points", [])
+                for intervention in interventions:
+                    practice = intervention.get("practice", "").strip()
+                    after_step = intervention.get("after_step", "")
+                    
+                    if practice:
+                        practice_id = get_or_create_node(
+                            practice,
+                            node_type="PRACTICE",
+                            description=intervention.get("effect", ""),
+                            metadata={"source": "causal_chains_intervention"}
+                        )
+                        
+                        if after_step and prev_step_name:
+                            add_edge(
+                                practice,
+                                prev_step_name,
+                                edge_type="ENABLES",
+                                explanation=intervention.get("effect", ""),
+                                metadata={"source": "causal_chains_intervention"}
+                            )
+        
+        # 4. ИЗВЛЕЧЕНИЕ ИЗ PREREQUISITES (предпосылки)
+        for block in blocks:
+            prereq = block.get("prerequisites", {})
+            if not prereq:
+                continue
+            
+            prerequisites = prereq.get("prerequisites", [])
+            sequence = prereq.get("recommended_sequence", [])
+            
+            # Предпосылки
+            for prereq_item in prerequisites:
+                prereq_name = prereq_item if isinstance(prereq_item, str) else prereq_item.get("concept", "")
+                if prereq_name:
+                    get_or_create_node(
+                        prereq_name,
+                        node_type="CONCEPT",
+                        metadata={"source": "prerequisites"}
+                    )
+            
+            # Последовательность обучения
+            for i, item in enumerate(sequence):
+                if i > 0:
+                    prev_item = sequence[i-1]
+                    curr_item = item if isinstance(item, str) else item.get("concept", "")
+                    prev_item_name = prev_item if isinstance(prev_item, str) else prev_item.get("concept", "")
+                    
+                    if curr_item and prev_item_name:
+                        add_edge(
+                            prev_item_name,
+                            curr_item,
+                            edge_type="REQUIRES",
+                            explanation=f"{prev_item_name} является предпосылкой для {curr_item}",
+                            metadata={"source": "prerequisites_sequence"}
+                        )
+        
+        # 5. ИЗВЛЕЧЕНИЕ ИЗ CASE_STUDIES (кейсы)
+        for block in blocks:
+            case_studies = block.get("case_studies", [])
+            if not case_studies:
+                continue
+            
+            for case in case_studies:
+                situation = case.get("situation", "").strip()
+                concepts = case.get("related_concepts", [])
+                
+                if situation:
+                    case_id = get_or_create_node(
+                        situation,
+                        node_type="CONCEPT",
+                        description=case.get("analysis", ""),
+                        metadata={"source": "case_study", "case_id": case.get("id", "")}
+                    )
+                    
+                    # Связи с концептами
+                    for concept in concepts:
+                        if isinstance(concept, str):
+                            add_edge(
+                                situation,
+                                concept,
+                                edge_type="RELATED_TO",
+                                explanation=f"Кейс связан с концептом {concept}",
+                                metadata={"source": "case_study"}
+                            )
+        
+        # 6. ИЗВЛЕЧЕНИЕ ИЗ SEMANTIC_RELATIONSHIPS (семантические связи)
+        for block in blocks:
+            relationships = block.get("semantic_relationships", {})
+            
+            for rel_type, rel_list in relationships.items():
+                for rel in rel_list:
+                    source = rel.get("source", "")
+                    target = rel.get("target", "")
+                    
+                    if not source or not target:
+                        continue
+                    
+                    # Маппинг типов связей
+                    edge_type_map = {
+                        "conceptual": "RELATED_TO",
+                        "causal": "LEADS_TO",
+                        "practical": "ENABLES",
+                        "temporal": "LEADS_TO",
+                        "structural": "IS_CORE_COMPONENT_OF"
+                    }
+                    
+                    edge_type = edge_type_map.get(rel_type, "RELATED_TO")
+                    strength = rel.get("strength", 1.0)
+                    
+                    add_edge(
+                        source,
+                        target,
+                        edge_type=edge_type,
+                        explanation=f"Семантическая связь: {rel_type}",
+                        confidence=strength,
+                        metadata={"source": "semantic_relationships", "rel_type": rel_type}
+                    )
+        
+        # 7. ДОПОЛНИТЕЛЬНЫЕ СВЯЗИ: перекрестные связи между блоками
+        # Связываем концепты, которые встречаются вместе в разных блоках
+        concept_cooccurrence = {}
+        for block in blocks:
+            block_entities = block.get("graph_entities", [])
+            for i, entity1 in enumerate(block_entities):
+                for entity2 in block_entities[i+1:]:
+                    key = tuple(sorted([entity1, entity2]))
+                    concept_cooccurrence[key] = concept_cooccurrence.get(key, 0) + 1
+        
+        # Добавляем связи для часто встречающихся пар
+        for (entity1, entity2), count in concept_cooccurrence.items():
+            if count >= 2:  # Минимум 2 совместных появления
+                add_edge(
+                    entity1,
+                    entity2,
+                    edge_type="RELATED_TO",
+                    explanation=f"Часто встречаются вместе ({count} раз)",
+                    confidence=min(count / 5.0, 1.0),  # Нормализуем до 1.0
+                    metadata={"source": "cooccurrence", "frequency": count}
+                )
+        
+        # Формируем финальную структуру
+        return {
+            "nodes": list(nodes.values()),
+            "edges": edges,
+            "metadata": {
+                "video_id": video_id,
+                "total_nodes": len(nodes),
+                "total_edges": len(edges),
+                "node_types": self._count_node_types_in_graph(nodes),
+                "edge_types": self._count_edge_types_in_graph(edges),
+                "sources": {
+                    "graph_entities": sum(1 for n in nodes.values() if "graph_entities" in n.get("metadata", {}).get("source", "")),
+                    "concept_hierarchy": sum(1 for n in nodes.values() if "concept_hierarchy" in n.get("metadata", {}).get("source", "")),
+                    "causal_chains": sum(1 for n in nodes.values() if "causal_chains" in n.get("metadata", {}).get("source", "")),
+                    "prerequisites": sum(1 for n in nodes.values() if "prerequisites" in n.get("metadata", {}).get("source", "")),
+                    "case_studies": sum(1 for n in nodes.values() if "case_study" in n.get("metadata", {}).get("source", "")),
+                    "semantic_relationships": sum(1 for e in edges if e.get("metadata", {}).get("source") == "semantic_relationships")
+                }
+            }
+        }
+    
+    def _count_node_types_in_graph(self, nodes: Dict) -> Dict[str, int]:
+        """Подсчитать количество узлов каждого типа"""
+        counts = {}
+        for node in nodes.values():
+            node_type = node.get("node_type", "CONCEPT")
+            counts[node_type] = counts.get(node_type, 0) + 1
+        return counts
+    
+    def _count_edge_types_in_graph(self, edges: List[Dict]) -> Dict[str, int]:
+        """Подсчитать количество ребер каждого типа"""
+        counts = {}
+        for edge in edges:
+            edge_type = edge.get("edge_type", "RELATED_TO")
+            counts[edge_type] = counts.get(edge_type, 0) + 1
+        return counts
+    
+    # ---------------------- AI Bot Helper Methods ---------------------- #
+    
+    def find_practices_for_concept(self, concept: str, knowledge_graph: Dict = None) -> List[Dict]:
+        """
+        AI-бот API: Найти практики для работы с концептом/симптомом.
+        
+        Args:
+            concept: Название концепта или симптома
+            knowledge_graph: Knowledge graph (если None, нужно загрузить из документа)
+            
+        Returns:
+            Список практик с reasoning chains
+        """
+        if not knowledge_graph:
+            return []
+        
+        practices = []
+        nodes = {node["name"].lower(): node for node in knowledge_graph.get("nodes", [])}
+        edges = knowledge_graph.get("edges", [])
+        
+        concept_lower = concept.lower()
+        concept_node = nodes.get(concept_lower)
+        
+        if not concept_node:
+            # Поиск частичного совпадения
+            for node_name, node in nodes.items():
+                if concept_lower in node_name or node_name in concept_lower:
+                    concept_node = node
+                    break
+        
+        if not concept_node:
+            return []
+        
+        concept_id = concept_node["id"]
+        
+        # Ищем практики через связи
+        for edge in edges:
+            if edge["to_id"] == concept_id:
+                # Находим узлы типа PRACTICE, которые связаны с концептом
+                source_node = next((n for n in nodes.values() if n["id"] == edge["from_id"]), None)
+                if source_node and source_node["node_type"] == "PRACTICE":
+                    practices.append({
+                        "practice": source_node["name"],
+                        "relation": edge["edge_type"],
+                        "explanation": edge.get("explanation", ""),
+                        "confidence": edge.get("confidence", 1.0),
+                        "description": source_node.get("description", "")
+                    })
+        
+        return practices
+    
+    def get_concept_chain(self, from_concept: str, to_concept: str, knowledge_graph: Dict = None) -> Optional[List[Dict]]:
+        """
+        AI-бот API: Получить цепочку связей между двумя концептами.
+        
+        Args:
+            from_concept: Начальный концепт
+            to_concept: Конечный концепт
+            knowledge_graph: Knowledge graph
+            
+        Returns:
+            Список шагов цепочки или None
+        """
+        if not knowledge_graph:
+            return None
+        
+        nodes = {node["id"]: node for node in knowledge_graph.get("nodes", [])}
+        nodes_by_name = {node["name"].lower(): node for node in nodes.values()}
+        edges_by_from = {}
+        
+        for edge in knowledge_graph.get("edges", []):
+            if edge["from_id"] not in edges_by_from:
+                edges_by_from[edge["from_id"]] = []
+            edges_by_from[edge["from_id"]].append(edge)
+        
+        # BFS поиск пути
+        from_node = nodes_by_name.get(from_concept.lower())
+        to_node = nodes_by_name.get(to_concept.lower())
+        
+        if not from_node or not to_node:
+            return None
+        
+        if from_node["id"] == to_node["id"]:
+            return [{"from": from_concept, "to": to_concept, "relation": "same"}]
+        
+        queue = [(from_node["id"], [from_node["id"]])]
+        visited = {from_node["id"]}
+        
+        while queue:
+            current_id, path = queue.pop(0)
+            
+            if len(path) > 5:  # Максимальная глубина
+                continue
+            
+            for edge in edges_by_from.get(current_id, []):
+                next_id = edge["to_id"]
+                
+                if next_id == to_node["id"]:
+                    # Найден путь
+                    chain = []
+                    full_path = path + [next_id]
+                    for i in range(len(full_path) - 1):
+                        current_step_id = full_path[i]
+                        next_step_id = full_path[i + 1]
+                        
+                        # Найти связь
+                        edge_found = next(
+                            (e for e in edges_by_from.get(current_step_id, []) if e["to_id"] == next_step_id),
+                            None
+                        )
+                        
+                        chain.append({
+                            "from": nodes[current_step_id]["name"],
+                            "to": nodes[next_step_id]["name"],
+                            "relation": edge_found["edge_type"] if edge_found else "unknown",
+                            "explanation": edge_found.get("explanation", "") if edge_found else ""
+                        })
+                    
+                    return chain
+                
+                if next_id not in visited:
+                    visited.add(next_id)
+                    queue.append((next_id, path + [next_id]))
+        
+        return None
+    
+    def recommend_exercise_for_practice(self, practice: str, knowledge_graph: Dict = None, 
+                                       duration: Optional[str] = None) -> Optional[Dict]:
+        """
+        AI-бот API: Рекомендовать упражнение для практики.
+        
+        Args:
+            practice: Название практики
+            knowledge_graph: Knowledge graph
+            duration: Желаемая длительность (опционально)
+            
+        Returns:
+            Dict с упражнением или None
+        """
+        if not knowledge_graph:
+            return None
+        
+        nodes = {node["name"].lower(): node for node in knowledge_graph.get("nodes", [])}
+        edges = knowledge_graph.get("edges", [])
+        
+        practice_lower = practice.lower()
+        practice_node = nodes.get(practice_lower)
+        
+        if not practice_node:
+            return None
+        
+        practice_id = practice_node["id"]
+        
+        # Ищем упражнения через связи IS_EXERCISE_FOR или IS_TECHNIQUE_FOR
+        for edge in edges:
+            if edge["to_id"] == practice_id and edge["edge_type"] in ["IS_EXERCISE_FOR", "IS_TECHNIQUE_FOR"]:
+                source_node = next((n for n in nodes.values() if n["id"] == edge["from_id"]), None)
+                
+                if source_node and source_node["node_type"] in ["EXERCISE", "TECHNIQUE"]:
+                    exercise_metadata = source_node.get("metadata", {})
+                    
+                    # Проверка длительности если указана
+                    if duration:
+                        exercise_duration = exercise_metadata.get("duration", "")
+                        if exercise_duration and duration.lower() not in exercise_duration.lower():
+                            continue
+                    
+                    return {
+                        "exercise": source_node["name"],
+                        "practice": practice,
+                        "description": source_node.get("description", ""),
+                        "duration": exercise_metadata.get("duration", ""),
+                        "frequency": exercise_metadata.get("frequency", ""),
+                        "instructions": exercise_metadata.get("instructions", []),
+                        "confidence": edge.get("confidence", 1.0)
+                    }
+        
+        return None
+    
     # ---------------------- Save ---------------------- #
     def save_markdown(self, md_path: Path, data: Dict[str, Any], base_name: str) -> None:
         lines: List[str] = [
@@ -1757,6 +2338,12 @@ class SarsekenovProcessor:
         # 🆕 Анализ семантических связей на уровне документа
         document_semantic_analysis = self.analyze_semantic_relationships(all_document_entities)
         
+        # 🚀 ПОСТРОЕНИЕ МАКСИМАЛЬНО ПОЛНОГО KNOWLEDGE GRAPH
+        print("[INFO] Building comprehensive Knowledge Graph from all extractors...")
+        knowledge_graph_data = self._build_knowledge_graph_from_blocks(all_blocks, video_id, all_document_entities)
+        print(f"[SUCCESS] Knowledge Graph built: {len(knowledge_graph_data.get('nodes', []))} nodes, "
+              f"{len(knowledge_graph_data.get('edges', []))} edges")
+        
         doc.update({
             "overview_toc": overview.get("overview_toc", ""),
             "overview_summary": overview.get("overview_summary", ""),
@@ -1764,6 +2351,9 @@ class SarsekenovProcessor:
             "semantic_relationships": document_semantic_analysis,  # 🆕 Семантические связи документа
             "total_graph_nodes": len(self.graph_nodes),  # 🆕 Статистика граф-системы
             "total_graph_relationships": len(self.graph_relationships),  # 🆕 Статистика граф-системы
+            
+            # 🚀 НОВОЕ: Максимально полный Knowledge Graph со всеми взаимосвязями
+            "knowledge_graph": knowledge_graph_data,
         })
 
         output_dir.mkdir(parents=True, exist_ok=True)

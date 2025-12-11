@@ -1,5 +1,5 @@
 """
-Тесты для SarsekenovProcessor.
+Тесты для KnowledgeGraphBuilder.
 
 Проверяют:
 - Координацию экстракторов
@@ -16,8 +16,8 @@ project_root = Path(__file__).resolve().parents[3]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from voice_bot_pipeline.text_processor.orchestrator.sarsekenov_processor import (
-    SarsekenovProcessor
+from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph_builder import (
+    KnowledgeGraphBuilder
 )
 from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph import (
     KnowledgeGraph,
@@ -33,11 +33,11 @@ from voice_bot_pipeline.tests.fixtures.real_sarsekenov_texts import (
 @pytest.fixture
 def processor():
     """Фикстура процессора"""
-    return SarsekenovProcessor()
+    return KnowledgeGraphBuilder()
 
 
-class TestSarsekenovProcessor:
-    """Тесты главного оркестратора"""
+class TestKnowledgeGraphBuilder:
+    """Тесты Knowledge Graph Builder"""
     
     def test_process_text_full_workflow(self, processor):
         """

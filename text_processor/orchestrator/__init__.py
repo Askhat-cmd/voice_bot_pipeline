@@ -2,13 +2,13 @@
 Orchestrator module - координация всех экстракторов.
 
 Экспортирует:
-- SarsekenovProcessor: главный оркестратор
+- KnowledgeGraphBuilder: билдер Knowledge Graph
 - KnowledgeGraph: граф знаний
 - NodeType, EdgeType: типы для графа
 """
 
-from voice_bot_pipeline.text_processor.orchestrator.sarsekenov_processor import (
-    SarsekenovProcessor,
+from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph_builder import (
+    KnowledgeGraphBuilder,
     ProcessingResult
 )
 from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph import (
@@ -20,7 +20,7 @@ from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph import (
 )
 
 __all__ = [
-    'SarsekenovProcessor',
+    'KnowledgeGraphBuilder',
     'ProcessingResult',
     'KnowledgeGraph',
     'GraphNode',

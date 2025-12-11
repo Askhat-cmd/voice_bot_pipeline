@@ -19,8 +19,8 @@ project_root = Path(__file__).resolve().parents[3]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from voice_bot_pipeline.text_processor.orchestrator.sarsekenov_processor import (
-    SarsekenovProcessor
+from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph_builder import (
+    KnowledgeGraphBuilder
 )
 from voice_bot_pipeline.text_processor.orchestrator.knowledge_graph import (
     KnowledgeGraph,
@@ -37,7 +37,7 @@ from voice_bot_pipeline.tests.fixtures.real_sarsekenov_texts import TRIADA_TRANS
 @pytest.fixture
 def processor_with_data():
     """Процессор с обработанным текстом"""
-    processor = SarsekenovProcessor()
+    processor = KnowledgeGraphBuilder()
     processor.process_text(
         TRIADA_TRANSFORMATION_TEXT,
         text_id="test_rag"
