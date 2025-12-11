@@ -309,17 +309,17 @@ class VectorIndexer:
                 logger.warning("Knowledge Graph отсутствует в данных")
                 return 0
             
-            collection = self.db_manager.get_or_create_collection(
-                name="knowledge_graph",
-                metadata={"description": "Knowledge Graph nodes and edges for AI bot"}
-            )
+            collection = self.db_manager.get_or_create_collection("knowledge_graph")
             
             nodes = knowledge_graph.get("nodes", [])
             edges = knowledge_graph.get("edges", [])
             video_id = sag_data.get("document_metadata", {}).get("video_id", "unknown")
             
+            logger.info(f"📊 Начало индексации Knowledge Graph: {video_id}")
+            logger.info(f"   Узлов: {len(nodes)}, Рёбер: {len(edges)}")
+            
             if not nodes:
-                logger.warning("Нет узлов в Knowledge Graph")
+                logger.warning("Нет узлов в Knowledge Graph для индексации")
                 return 0
             
             # Создаем индекс связей для быстрого поиска
@@ -397,12 +397,12 @@ class VectorIndexer:
                 )
                 indexed_count += len(batch_ids)
             
-            logger.info(f"✅ Проиндексировано узлов Knowledge Graph: {indexed_count}")
-            logger.info(f"📊 Всего связей в графе: {len(edges)}")
+            logger.info(f"✅ Knowledge Graph проиндексирован: {indexed_count} узлов, {len(edges)} рёбер")
             return indexed_count
             
         except Exception as e:
-            logger.error(f"Ошибка при индексации Knowledge Graph: {e}", exc_info=True)
+            logger.error(f"Ошибка при индексации Knowledge Graph: {e}")
+            logger.exception(e)  # Полный traceback
             return 0
     
     def index_sag_file(self, json_path: Path, index_levels: List[str] = None) -> Dict[str, Any]:
