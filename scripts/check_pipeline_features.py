@@ -45,24 +45,28 @@ class FeatureChecker:
             'issues': []
         }
         
-        # Проверяем наличие practices в блоках или на верхнем уровне
-        blocks = self.data.get('blocks', [])
+        # Сначала проверяем верхний уровень (после агрегации)
+        top_level_practices = self.data.get('practices', [])
         practices_found = []
         
-        for block in blocks:
-            if 'practices' in block and block['practices']:
-                practices_found.extend(block['practices'] if isinstance(block['practices'], list) else [block['practices']])
-        
-        # Также проверяем верхний уровень
-        if 'practices' in self.data:
-            top_level_practices = self.data['practices']
+        # Если есть на верхнем уровне, используем его
+        if top_level_practices:
             if isinstance(top_level_practices, list):
                 practices_found.extend(top_level_practices)
             else:
                 practices_found.append(top_level_practices)
         
+        # Если нет на верхнем уровне, проверяем блоки
         if not practices_found:
-            result['issues'].append('Ключ "practices" отсутствует или пуст')
+            blocks = self.data.get('blocks', [])
+            
+            for block in blocks:
+                if 'practices' in block and block['practices']:
+                    practices_found.extend(block['practices'] if isinstance(block['practices'], list) else [block['practices']])
+        
+        if not practices_found:
+            result['issues'].append('Ключ "practices" отсутствует на верхнем уровне и в блоках или пуст')
+            result['issues'].append('Практики могут быть извлечены из case_studies и concept_hierarchy через агрегацию')
             return result
         
         result['implemented'] = True
@@ -97,23 +101,30 @@ class FeatureChecker:
             'issues': []
         }
         
-        # Проверяем наличие safety в блоках
-        blocks = self.data.get('blocks', [])
-        all_safety_data = []
+        # Сначала проверяем верхний уровень (после агрегации)
+        global_safety = self.data.get('global_safety')
         
-        # Собираем все данные safety из всех блоков
-        for block in blocks:
-            if 'safety' in block:
-                all_safety_data.append(block['safety'])
+        # Если нет на верхнем уровне, проверяем блоки
+        if not global_safety:
+            blocks = self.data.get('blocks', [])
+            all_safety_data = []
+            
+            # Собираем все данные safety из всех блоков
+            for block in blocks:
+                if 'safety' in block:
+                    all_safety_data.append(block['safety'])
+            
+            if not all_safety_data:
+                result['issues'].append('Ключ "global_safety" отсутствует на верхнем уровне и в блоках')
+                return result
+            
+            # Используем первый блок для проверки структуры
+            global_safety = all_safety_data[0] if all_safety_data else {}
+        else:
+            all_safety_data = [global_safety]
         
-        # Также проверяем верхний уровень
-        if 'global_safety' in self.data:
-            all_safety_data.append(self.data['global_safety'])
-        elif 'safety' in self.data:
-            all_safety_data.append(self.data['safety'])
-        
-        if not all_safety_data:
-            result['issues'].append('Ключ "safety" или "global_safety" отсутствует')
+        if not global_safety:
+            result['issues'].append('Ключ "global_safety" или "safety" отсутствует')
             return result
         
         result['implemented'] = True
@@ -183,29 +194,33 @@ class FeatureChecker:
             'issues': []
         }
         
-        # Проверяем наличие concept_hierarchy в блоках
-        blocks = self.data.get('blocks', [])
+        # Сначала проверяем верхний уровень (после агрегации)
+        top_level_hierarchy = self.data.get('concept_hierarchy')
+        
         all_hierarchies = []
         
-        # Собираем все concept_hierarchy из всех блоков
-        for block in blocks:
-            if 'concept_hierarchy' in block:
-                hierarchy_data = block['concept_hierarchy']
-                if isinstance(hierarchy_data, list) and hierarchy_data:
-                    all_hierarchies.extend(hierarchy_data)
-                elif isinstance(hierarchy_data, dict):
-                    all_hierarchies.append(hierarchy_data)
+        # Если есть на верхнем уровне, используем его
+        if top_level_hierarchy:
+            if isinstance(top_level_hierarchy, list):
+                all_hierarchies.extend(top_level_hierarchy)
+            elif isinstance(top_level_hierarchy, dict):
+                all_hierarchies.append(top_level_hierarchy)
         
-        # Также проверяем верхний уровень
-        if 'concept_hierarchy' in self.data:
-            top_level = self.data['concept_hierarchy']
-            if isinstance(top_level, list):
-                all_hierarchies.extend(top_level)
-            elif isinstance(top_level, dict):
-                all_hierarchies.append(top_level)
+        # Если нет на верхнем уровне, проверяем блоки
+        if not all_hierarchies:
+            blocks = self.data.get('blocks', [])
+            
+            # Собираем все concept_hierarchy из всех блоков
+            for block in blocks:
+                if 'concept_hierarchy' in block:
+                    hierarchy_data = block['concept_hierarchy']
+                    if isinstance(hierarchy_data, list) and hierarchy_data:
+                        all_hierarchies.extend(hierarchy_data)
+                    elif isinstance(hierarchy_data, dict):
+                        all_hierarchies.append(hierarchy_data)
         
         if not all_hierarchies:
-            result['issues'].append('Ключ "concept_hierarchy" отсутствует или все массивы пустые')
+            result['issues'].append('Ключ "concept_hierarchy" отсутствует на верхнем уровне и в блоках или все массивы пустые')
             result['issues'].append('Возможно, экстрактор ConceptHierarchy не вызывается или не находит данных')
             return result
         

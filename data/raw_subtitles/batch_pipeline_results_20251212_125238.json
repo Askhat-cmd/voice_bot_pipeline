@@ -1,0 +1,50 @@
+[
+  {
+    "youtube_url": "https://youtu.be/flVVt4bDFmo?si=UMbZ6LzM74o-ERzU",
+    "custom_name": null,
+    "pipeline_start": "2025-12-12 12:50:17",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.2194015979766846,
+        "json_path": "data\\raw_subtitles\\2024\\12\\2024-12-10_flVVt4bDFmo_Секрет_Потоковых_Состояний.json",
+        "srt_path": "data\\raw_subtitles\\2024\\12\\2024-12-10_flVVt4bDFmo_Секрет_Потоковых_Состояний.srt",
+        "txt_path": "data\\raw_subtitles\\2024\\12\\2024-12-10_flVVt4bDFmo_Секрет_Потоковых_Состояний.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 105.8631546497345,
+        "sag_v2_output": "data\\sag_final\\2024\\12\\2024-12-10_flVVt4bDFmo_Секрет_Потоковых_Состояний.for_vector.json",
+        "review_markdown": "data\\sag_final\\2024\\12\\2024-12-10_flVVt4bDFmo_Секрет_Потоковых_Состояний.for_review.md",
+        "blocks_created": 2,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 32.676064014434814,
+        "indexed": {
+          "documents": 1,
+          "blocks": 2,
+          "graph_entities": 16,
+          "knowledge_graph": 16
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "flVVt4bDFmo",
+    "total_duration": 107.80085968971252,
+    "pipeline_end": "2025-12-12 12:52:05",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2024\\12\\2024-12-10_flVVt4bDFmo_Секрет_Потоковых_Состояний.for_vector.json",
+      "review_markdown": "data\\sag_final\\2024\\12\\2024-12-10_flVVt4bDFmo_Секрет_Потоковых_Состояний.for_review.md"
+    },
+    "blocks_created": 2,
+    "entities_extracted": 20
+  }
+]

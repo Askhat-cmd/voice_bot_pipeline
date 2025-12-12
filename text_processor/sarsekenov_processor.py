@@ -2430,6 +2430,116 @@ class SarsekenovProcessor:
             "knowledge_graph": knowledge_graph_data,
         })
 
+        # 🚀 АГРЕГАЦИЯ ДАННЫХ SAG v2.0 НА УРОВНЕ ДОКУМЕНТА
+        print("[INFO] Aggregating SAG v2.0 data from blocks...")
+        
+        # 1. ГЛОБАЛЬНАЯ БЕЗОПАСНОСТЬ (Global Safety)
+        global_safety = {
+            "contraindications": [],
+            "limitations": [],
+            "when_to_stop": [],
+            "when_to_seek_professional_help": [],
+            "red_flags": [],
+            "notes": []
+        }
+        
+        for block in all_blocks:
+            block_safety = block.get("safety", {})
+            if isinstance(block_safety, dict):
+                for key in global_safety.keys():
+                    # Добавляем уникальные элементы
+                    block_items = block_safety.get(key, [])
+                    if isinstance(block_items, list):
+                        for item in block_items:
+                            if item and item not in global_safety[key]:
+                                # Если это словарь, сравниваем по содержимому
+                                if isinstance(item, dict):
+                                    item_str = str(item)
+                                    if item_str not in [str(existing) for existing in global_safety[key]]:
+                                        global_safety[key].append(item)
+                                else:
+                                    global_safety[key].append(item)
+        
+        # 2. ПРАКТИКИ (собираем из case_studies и concept_hierarchy)
+        practices = []
+        seen_practices = set()
+        
+        for block in all_blocks:
+            # Из case_studies
+            for case in block.get("case_studies", []):
+                if isinstance(case, dict):
+                    analysis = case.get("analysis", "")
+                    situation = case.get("situation", "")
+                    applied_practices = case.get("applied_practices", [])
+                    
+                    # Проверяем наличие практик в разных полях
+                    practice_keywords = ["практика", "упражнение", "техника", "медитация", "practice", "exercise", "technique"]
+                    has_practice = any(
+                        keyword in str(analysis).lower() or keyword in str(situation).lower()
+                        for keyword in practice_keywords
+                    ) or len(applied_practices) > 0
+                    
+                    if has_practice:
+                        practice_name = situation or (applied_practices[0] if applied_practices else "Практика из кейса")
+                        practice_item = {
+                            "name": practice_name,
+                            "description": analysis or situation,
+                            "source": "case_study",
+                            "block_id": block.get("block_id"),
+                            "related_concepts": case.get("related_concepts", [])
+                        }
+                        practice_key = practice_name.lower()
+                        if practice_key and practice_key not in seen_practices:
+                            practices.append(practice_item)
+                            seen_practices.add(practice_key)
+            
+            # Из concept_hierarchy
+            for concept in block.get("concept_hierarchy", []):
+                if isinstance(concept, dict):
+                    concept_level = concept.get("level", "").lower() if concept.get("level") else ""
+                    if concept_level in ["practice", "technique", "exercise"]:
+                        practice_item = {
+                            "name": concept.get("name", ""),
+                            "description": concept.get("description", "") or concept.get("context", ""),
+                            "level": concept.get("level"),
+                            "parent": concept.get("parent", ""),
+                            "source": "concept_hierarchy",
+                            "block_id": block.get("block_id"),
+                            "relationship": concept.get("relationship", "")
+                        }
+                        practice_key = concept.get("name", "").lower()
+                        if practice_key and practice_key not in seen_practices:
+                            practices.append(practice_item)
+                            seen_practices.add(practice_key)
+        
+        # 3. ИЕРАРХИЯ КОНЦЕПТОВ (агрегация)
+        concept_hierarchy_agg = []
+        seen_concepts = set()
+        
+        for block in all_blocks:
+            for concept in block.get("concept_hierarchy", []):
+                if isinstance(concept, dict):
+                    concept_name = concept.get("name", "").lower() if concept.get("name") else ""
+                    if concept_name and concept_name not in seen_concepts:
+                        concept_hierarchy_agg.append(concept)
+                        seen_concepts.add(concept_name)
+        
+        # ДОБАВЛЯЕМ В ДОКУМЕНТ
+        doc["global_safety"] = global_safety
+        doc["practices"] = practices
+        doc["concept_hierarchy"] = concept_hierarchy_agg
+        
+        # Обновляем метаданные после агрегации
+        doc["document_metadata"].update({
+            "total_safety_items": sum(len(v) for v in global_safety.values()),
+            "total_practices": len(practices),
+            "total_concept_hierarchy": len(concept_hierarchy_agg),
+            "aggregation_complete": True
+        })
+        
+        print(f"[SUCCESS] Aggregated: {sum(len(v) for v in global_safety.values())} safety items, "
+              f"{len(practices)} practices, {len(concept_hierarchy_agg)} concepts")
+
         output_dir.mkdir(parents=True, exist_ok=True)
         json_path = output_dir / f"{base}.for_vector.json"
         md_path = output_dir / f"{base}.for_review.md"
