@@ -99,44 +99,78 @@ class FeatureChecker:
         
         # Проверяем наличие safety в блоках
         blocks = self.data.get('blocks', [])
-        safety_found = None
+        all_safety_data = []
         
-        # Ищем первый блок с safety
+        # Собираем все данные safety из всех блоков
         for block in blocks:
-            if 'safety' in block and block['safety']:
-                safety_found = block['safety']
-                break
+            if 'safety' in block:
+                all_safety_data.append(block['safety'])
         
         # Также проверяем верхний уровень
-        if not safety_found and 'global_safety' in self.data:
-            safety_found = self.data['global_safety']
-        elif not safety_found and 'safety' in self.data:
-            safety_found = self.data['safety']
+        if 'global_safety' in self.data:
+            all_safety_data.append(self.data['global_safety'])
+        elif 'safety' in self.data:
+            all_safety_data.append(self.data['safety'])
         
-        if not safety_found:
+        if not all_safety_data:
             result['issues'].append('Ключ "safety" или "global_safety" отсутствует')
             return result
         
         result['implemented'] = True
         
+        # Агрегируем данные из всех блоков
+        total_contraindications = 0
+        total_limitations = 0
+        total_when_to_stop = 0
+        total_when_to_seek_help = 0
+        total_red_flags = 0
+        total_notes = 0
+        blocks_with_data = 0
+        
+        for safety_data in all_safety_data:
+            if isinstance(safety_data, dict):
+                total_contraindications += len(safety_data.get('contraindications', []))
+                total_limitations += len(safety_data.get('limitations', []))
+                total_when_to_stop += len(safety_data.get('when_to_stop', []))
+                total_when_to_seek_help += len(safety_data.get('when_to_seek_professional_help', []))
+                total_red_flags += len(safety_data.get('red_flags', []))
+                total_notes += len(safety_data.get('notes', []))
+                
+                # Проверяем, есть ли хотя бы какие-то данные
+                if any([
+                    len(safety_data.get('contraindications', [])),
+                    len(safety_data.get('limitations', [])),
+                    len(safety_data.get('when_to_stop', [])),
+                    len(safety_data.get('when_to_seek_professional_help', [])),
+                    len(safety_data.get('red_flags', [])),
+                    len(safety_data.get('notes', []))
+                ]):
+                    blocks_with_data += 1
+        
         # Подсчет элементов
         result['details'] = {
-            'contraindications': len(safety_found.get('contraindications', [])),
-            'limitations': len(safety_found.get('limitations', [])),
-            'when_to_stop': len(safety_found.get('when_to_stop', [])),
-            'when_to_seek_help': len(safety_found.get('when_to_seek_professional_help', [])),
-            'red_flags': len(safety_found.get('red_flags', [])),
-            'notes': len(safety_found.get('notes', []))
+            'contraindications': total_contraindications,
+            'limitations': total_limitations,
+            'when_to_stop': total_when_to_stop,
+            'when_to_seek_help': total_when_to_seek_help,
+            'red_flags': total_red_flags,
+            'notes': total_notes,
+            'blocks_with_safety': len(all_safety_data),
+            'blocks_with_data': blocks_with_data
         }
         
         # Критические проверки
-        if result['details']['when_to_seek_help'] < 3:
+        if blocks_with_data == 0:
+            result['issues'].append('Структура safety есть, но все поля пустые во всех блоках')
+            result['issues'].append('Возможно, экстрактор Safety не вызывается или не находит данных')
+        
+        if total_when_to_seek_help < 3 and blocks_with_data > 0:
             result['issues'].append(
                 f'Недостаточно рекомендаций обращения за помощью: '
-                f'{result["details"]["when_to_seek_help"]} (нужно минимум 3)'
+                f'{total_when_to_seek_help} (нужно минимум 3)'
             )
         
-        if result['details']['notes'] == 0:
+        if total_notes == 0 and blocks_with_data > 0:
             result['issues'].append('Отсутствуют общие заметки о безопасности')
         
         return result
@@ -151,54 +185,63 @@ class FeatureChecker:
         
         # Проверяем наличие concept_hierarchy в блоках
         blocks = self.data.get('blocks', [])
-        hierarchy_found = None
+        all_hierarchies = []
         
-        # Ищем первый блок с concept_hierarchy
+        # Собираем все concept_hierarchy из всех блоков
         for block in blocks:
-            if 'concept_hierarchy' in block and block['concept_hierarchy']:
-                hierarchy_found = block['concept_hierarchy']
-                break
+            if 'concept_hierarchy' in block:
+                hierarchy_data = block['concept_hierarchy']
+                if isinstance(hierarchy_data, list) and hierarchy_data:
+                    all_hierarchies.extend(hierarchy_data)
+                elif isinstance(hierarchy_data, dict):
+                    all_hierarchies.append(hierarchy_data)
         
         # Также проверяем верхний уровень
-        if not hierarchy_found and 'concept_hierarchy' in self.data:
-            hierarchy_found = self.data['concept_hierarchy']
+        if 'concept_hierarchy' in self.data:
+            top_level = self.data['concept_hierarchy']
+            if isinstance(top_level, list):
+                all_hierarchies.extend(top_level)
+            elif isinstance(top_level, dict):
+                all_hierarchies.append(top_level)
         
-        if not hierarchy_found:
-            result['issues'].append('Ключ "concept_hierarchy" отсутствует')
+        if not all_hierarchies:
+            result['issues'].append('Ключ "concept_hierarchy" отсутствует или все массивы пустые')
+            result['issues'].append('Возможно, экстрактор ConceptHierarchy не вызывается или не находит данных')
             return result
         
         result['implemented'] = True
         
-        # Подсчет элементов (адаптируемся к реальной структуре)
-        if isinstance(hierarchy_found, dict):
-            result['details'] = {
-                'fundamental_count': len(hierarchy_found.get('fundamental_concepts', [])),
-                'advanced_count': len(hierarchy_found.get('advanced_concepts', [])),
-                'learning_levels': len(hierarchy_found.get('learning_sequence', [])),
-                'has_prerequisites': bool(hierarchy_found.get('prerequisites')),
-                'fundamental_concepts': hierarchy_found.get('fundamental_concepts', [])[:5]
-            }
-            
-            # Проверки
-            required_fields = ['concept_levels', 'prerequisites', 'learning_sequence']
-            missing = [f for f in required_fields if f not in hierarchy_found]
-            if missing:
-                result['issues'].append(f'Отсутствуют поля: {missing}')
-            
-            if result['details']['fundamental_count'] == 0:
-                result['issues'].append('Нет базовых концептов (fundamental)')
-            
-            if result['details']['learning_levels'] == 0:
-                result['issues'].append('Отсутствует последовательность обучения')
-        else:
-            result['details'] = {
-                'fundamental_count': 0,
-                'advanced_count': 0,
-                'learning_levels': 0,
-                'has_prerequisites': False,
-                'fundamental_concepts': []
-            }
-            result['issues'].append('Неожиданная структура concept_hierarchy')
+        # Подсчет элементов
+        total_concepts = len(all_hierarchies)
+        fundamental_count = 0
+        advanced_count = 0
+        fundamental_concepts = []
+        
+        for hierarchy in all_hierarchies:
+            if isinstance(hierarchy, dict):
+                level = hierarchy.get('level', '').lower()
+                if 'fundamental' in level or level == 'root' or level == 'domain':
+                    fundamental_count += 1
+                    if hierarchy.get('name'):
+                        fundamental_concepts.append(hierarchy.get('name'))
+                elif 'advanced' in level or level == 'practice' or level == 'technique':
+                    advanced_count += 1
+        
+        result['details'] = {
+            'total_concepts': total_concepts,
+            'fundamental_count': fundamental_count,
+            'advanced_count': advanced_count,
+            'fundamental_concepts': fundamental_concepts[:5],
+            'blocks_with_hierarchy': len([b for b in blocks if 'concept_hierarchy' in b and b['concept_hierarchy']])
+        }
+        
+        # Проверки
+        if total_concepts == 0:
+            result['issues'].append('Структура concept_hierarchy есть, но все массивы пустые')
+            result['issues'].append('Возможно, экстрактор ConceptHierarchy не находит данных для извлечения')
+        
+        if fundamental_count == 0 and total_concepts > 0:
+            result['issues'].append('Нет базовых концептов (fundamental/root/domain)')
         
         return result
     
