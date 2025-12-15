@@ -1,0 +1,50 @@
+[
+  {
+    "youtube_url": "https://youtu.be/MO173IvqsXg?si=KkoItO6HYdzcoDwq",
+    "custom_name": null,
+    "pipeline_start": "2025-12-15 15:39:46",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.301440954208374,
+        "json_path": "data\\raw_subtitles\\2025\\11\\2025-11-20_MO173IvqsXg_Можно_Просветлеть_без_страдания.json",
+        "srt_path": "data\\raw_subtitles\\2025\\11\\2025-11-20_MO173IvqsXg_Можно_Просветлеть_без_страдания.srt",
+        "txt_path": "data\\raw_subtitles\\2025\\11\\2025-11-20_MO173IvqsXg_Можно_Просветлеть_без_страдания.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 79.35038018226624,
+        "sag_v2_output": "data\\sag_final\\2025\\11\\2025-11-20_MO173IvqsXg_Можно_Просветлеть_без_страдания.for_vector.json",
+        "review_markdown": "data\\sag_final\\2025\\11\\2025-11-20_MO173IvqsXg_Можно_Просветлеть_без_страдания.for_review.md",
+        "blocks_created": 1,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 8.71841549873352,
+        "indexed": {
+          "documents": 1,
+          "blocks": 1,
+          "graph_entities": 10,
+          "knowledge_graph": 10
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "MO173IvqsXg",
+    "total_duration": 81.5527412891388,
+    "pipeline_end": "2025-12-15 15:41:07",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2025\\11\\2025-11-20_MO173IvqsXg_Можно_Просветлеть_без_страдания.for_vector.json",
+      "review_markdown": "data\\sag_final\\2025\\11\\2025-11-20_MO173IvqsXg_Можно_Просветлеть_без_страдания.for_review.md"
+    },
+    "blocks_created": 1,
+    "entities_extracted": 10
+  }
+]

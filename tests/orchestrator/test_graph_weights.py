@@ -270,3 +270,4 @@ class TestIntegration:
         assert weight2 > 0.3  # метанаблюдение и наблюдение связаны
 
 
+
