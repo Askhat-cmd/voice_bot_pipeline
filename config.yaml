@@ -63,3 +63,14 @@ vector_db:
   
   # Примечание: rate_limiting больше не нужен для локальных моделей Sentence-Transformers
   # Все настройки rate limiting удалены, так как модель работает локально без API запросов
+
+# Настройки списка видео канала
+channel_list:
+  # Путь к JSON файлу со списком видео канала
+  json_path: "data/channel_video_list/channel_videos_list.json"
+  
+  # Автоматически обновлять список перед обработкой
+  auto_update: false
+  
+  # Использовать список для преобразования номеров в URL
+  use_channel_list: true

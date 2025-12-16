@@ -17,6 +17,7 @@ from collections import defaultdict
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from env_utils import load_env
+from utils.video_registry import VideoRegistry
 
 try:
     from googleapiclient.discovery import build
@@ -426,7 +427,7 @@ class ChannelParser:
             return f"{minutes}:{secs:02d}"
     
     def save_to_markdown(self, videos_metadata: List[Dict], video_playlists_map: Dict[str, List[str]], 
-                        output_path: Path) -> None:
+                        output_path: Path, registry: Optional[VideoRegistry] = None) -> None:
         """
         Сохранение результатов в Markdown файл.
         
@@ -434,17 +435,27 @@ class ChannelParser:
             videos_metadata: Список метаданных видео
             video_playlists_map: Карта видео -> плейлисты
             output_path: Путь к выходному файлу
+            registry: Реестр видео для проверки статуса обработки (опционально)
         """
         # Сортировка по дате публикации (новые сначала)
         videos_metadata.sort(key=lambda x: x['published_at'], reverse=True)
+        
+        # Загружаем реестр если не передан
+        if registry is None:
+            registry_path = Path(__file__).resolve().parent.parent / "data" / "video_registry.json"
+            if registry_path.exists():
+                try:
+                    registry = VideoRegistry(str(registry_path))
+                except:
+                    registry = None
         
         # Формирование содержимого Markdown
         lines = []
         lines.append("# Список видео канала Сарсекенова\n")
         lines.append(f"**Дата парсинга:** {datetime.now().strftime('%d.%m.%Y %H:%M')}")
         lines.append(f"**Всего видео:** {len(videos_metadata)}\n")
-        lines.append("| № | Дата публикации | Название | Плейлист | Просмотры | Длительность | Ссылка |")
-        lines.append("|---|----------------|----------|----------|-----------|--------------|--------|")
+        lines.append("| № | Дата публикации | Название | Плейлист | Просмотры | Длительность | Статус | Дата обработки | Ссылка |")
+        lines.append("|---|----------------|----------|----------|-----------|--------------|--------|----------------|--------|")
         
         for idx, video in enumerate(videos_metadata, 1):
             video_id = video['video_id']
@@ -457,7 +468,31 @@ class ChannelParser:
             duration = self.format_duration(video.get('duration_seconds', 0))
             url = video['url']
             
-            lines.append(f"| {idx} | {date} | {title} | {playlist_str} | {views} | {duration} | [Ссылка]({url}) |")
+            # Проверяем статус обработки
+            status_symbol = '[ ]'  # Не обработано
+            processed_date = ''
+            
+            if registry and registry.video_exists(video_id):
+                video_data = registry.data["videos"].get(video_id, {})
+                video_status = video_data.get("status", "pending")
+                
+                if video_status == "processed":
+                    status_symbol = '[x]'  # Обработано
+                    # Получаем дату последней обработки
+                    history = video_data.get("processing_history", [])
+                    if history:
+                        last_record = history[-1]
+                        processed_at = last_record.get("processed_at", "")
+                        if processed_at:
+                            try:
+                                dt = datetime.fromisoformat(processed_at.replace('Z', '+00:00'))
+                                processed_date = dt.strftime('%d.%m.%Y')
+                            except:
+                                processed_date = processed_at[:10] if len(processed_at) >= 10 else ''
+                elif video_status == "failed":
+                    status_symbol = '[!]'  # Ошибка
+            
+            lines.append(f"| {idx} | {date} | {title} | {playlist_str} | {views} | {duration} | {status_symbol} | {processed_date} | [Ссылка]({url}) |")
         
         # Сохранение файла
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -465,18 +500,74 @@ class ChannelParser:
             f.write('\n'.join(lines))
         
         print(f"[OK] Результаты сохранены в: {output_path}")
+    
+    def save_to_json(self, videos_metadata: List[Dict], video_playlists_map: Dict[str, List[str]], 
+                    output_path: Path) -> None:
+        """
+        Сохранение результатов в JSON файл для программного использования.
+        
+        Args:
+            videos_metadata: Список метаданных видео
+            video_playlists_map: Карта видео -> плейлисты
+            output_path: Путь к выходному файлу
+        """
+        import json
+        
+        # Сортировка по дате публикации (новые сначала) - должна совпадать с Markdown
+        videos_metadata.sort(key=lambda x: x['published_at'], reverse=True)
+        
+        # Формирование JSON структуры
+        json_data = {
+            "metadata": {
+                "parsed_at": datetime.now().isoformat(),
+                "parsed_at_formatted": datetime.now().strftime('%d.%m.%Y %H:%M'),
+                "total_videos": len(videos_metadata),
+                "channel_url": "https://www.youtube.com/@Salsar/videos"
+            },
+            "videos": []
+        }
+        
+        for idx, video in enumerate(videos_metadata, 1):
+            video_id = video['video_id']
+            playlists = video_playlists_map.get(video_id, [])
+            
+            video_entry = {
+                "number": idx,
+                "video_id": video_id,
+                "url": video['url'],
+                "title": video['title'],
+                "published_date": video['published_at'],
+                "published_date_formatted": self.format_date(video['published_at']),
+                "view_count": video['view_count'],
+                "view_count_formatted": self.format_view_count(video['view_count']),
+                "duration_seconds": video.get('duration_seconds', 0),
+                "duration_formatted": self.format_duration(video.get('duration_seconds', 0)),
+                "playlists": playlists if playlists else []
+            }
+            
+            json_data["videos"].append(video_entry)
+        
+        # Сохранение файла
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
+        
+        print(f"[OK] JSON результаты сохранены в: {output_path}")
 
 
 def main():
     """Основная функция скрипта"""
     channel_url = "https://www.youtube.com/@Salsar/videos"
-    output_path = Path(__file__).resolve().parent.parent / "data" / "channel_videos_list.md"
+    data_dir = Path(__file__).resolve().parent.parent / "data" / "channel_video_list"
+    md_output_path = data_dir / "channel_videos_list.md"
+    json_output_path = data_dir / "channel_videos_list.json"
     
     print("=" * 60)
     print("Парсинг канала YouTube Сарсекенова")
     print("=" * 60)
     print(f"Канал: {channel_url}")
-    print(f"Выходной файл: {output_path}")
+    print(f"Markdown файл: {md_output_path}")
+    print(f"JSON файл: {json_output_path}")
     print()
     
     try:
@@ -510,8 +601,18 @@ def main():
         # Определение принадлежности видео к плейлистам
         video_playlists_map = parser.map_videos_to_playlists(video_ids, channel_playlists)
         
-        # Сохранение результатов
-        parser.save_to_markdown(videos_metadata, video_playlists_map, output_path)
+        # Загружаем реестр для проверки статусов
+        registry_path = Path(__file__).resolve().parent.parent / "data" / "video_registry.json"
+        registry = None
+        if registry_path.exists():
+            try:
+                registry = VideoRegistry(str(registry_path))
+            except:
+                pass
+        
+        # Сохранение результатов в оба формата
+        parser.save_to_markdown(videos_metadata, video_playlists_map, md_output_path, registry)
+        parser.save_to_json(videos_metadata, video_playlists_map, json_output_path)
         
         print("\n" + "=" * 60)
         print("[OK] Парсинг завершен успешно!")

@@ -23,6 +23,8 @@ from vector_db import VectorDBManager, EmbeddingService, VectorIndexer
 from utils.video_registry import VideoRegistry, VideoMetadata, ProcessingRecord
 from utils.youtube_metadata_fetcher import YouTubeAPIMetadataFetcher
 from utils.file_utils import create_filename, get_date_paths
+from utils.channel_list_parser import ChannelListParser
+from utils.markdown_updater import MarkdownUpdater
 from datetime import datetime
 
 class PipelineOrchestrator:
@@ -42,6 +44,17 @@ class PipelineOrchestrator:
         registry_path = self.config.get('pipeline', {}).get('registry_path', 'data/video_registry.json')
         self.registry = VideoRegistry(registry_path)
         self.metadata_fetcher = YouTubeAPIMetadataFetcher()
+        
+        # 3.6) Markdown Updater для обновления списка видео
+        channel_list_config = self.config.get('channel_list', {})
+        markdown_path = Path(__file__).resolve().parent / "data" / "channel_video_list" / "channel_videos_list.md"
+        if markdown_path.exists():
+            try:
+                self.markdown_updater = MarkdownUpdater(str(markdown_path), registry_path)
+            except:
+                self.markdown_updater = None
+        else:
+            self.markdown_updater = None
         
         # 4) stages - только SAG v2.0
         self.subtitle_extractor = YouTubeSubtitlesExtractor(
@@ -365,9 +378,42 @@ class PipelineOrchestrator:
             return results
     
     def run_batch_pipeline(self, urls_file: str) -> List[Dict[str, Any]]:
-        """Run pipeline for multiple URLs from file"""
-        with open(urls_file, 'r', encoding='utf-8') as f:
-            urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        """Run pipeline for multiple URLs from file with support for video numbers from channel list"""
+        # Проверяем настройки использования списка канала
+        channel_list_config = self.config.get('channel_list', {})
+        use_channel_list = channel_list_config.get('use_channel_list', True)
+        json_path = channel_list_config.get('json_path', 'data/channel_videos_list.json')
+        
+        urls = []
+        warnings = []
+        
+        # Если включено использование списка канала
+        if use_channel_list:
+            json_path_full = Path(__file__).resolve().parent / json_path
+            if json_path_full.exists():
+                try:
+                    parser = ChannelListParser(str(json_path_full))
+                    urls, warnings = parser.parse_urls_file(urls_file)
+                    
+                    # Выводим предупреждения если есть
+                    for warning in warnings:
+                        self.logger.warning(f"[WARNING] {warning}")
+                    
+                    self.logger.info(f"[INFO] Использован список канала: найдено {len(urls)} URL из файла {urls_file}")
+                except Exception as e:
+                    self.logger.warning(f"[WARNING] Ошибка при использовании списка канала: {e}. Используется обычный режим.")
+                    # Fallback на обычный режим
+                    with open(urls_file, 'r', encoding='utf-8') as f:
+                        urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+            else:
+                self.logger.warning(f"[WARNING] Файл списка канала не найден: {json_path_full}. Используется обычный режим.")
+                # Fallback на обычный режим
+                with open(urls_file, 'r', encoding='utf-8') as f:
+                    urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        else:
+            # Обычный режим без использования списка
+            with open(urls_file, 'r', encoding='utf-8') as f:
+                urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
         
         self.logger.info(f"🚀 Starting SAG v2.0 batch pipeline for {len(urls)} URLs")
         
@@ -405,6 +451,14 @@ class PipelineOrchestrator:
             
             result = self.run_full_pipeline(url)
             results.append(result)
+            
+            # Обновляем Markdown файл после обработки
+            if self.markdown_updater and result.get("status") == "success":
+                try:
+                    self.markdown_updater.update_after_processing(video_id)
+                    self.logger.info(f"[INFO] Markdown файл обновлен для видео {video_id}")
+                except Exception as e:
+                    self.logger.warning(f"[WARNING] Не удалось обновить Markdown для {video_id}: {e}")
         
         # Финальная статистика
         stats = self.registry.get_statistics()
