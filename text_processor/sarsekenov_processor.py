@@ -20,6 +20,8 @@ import tiktoken
 import yaml
 from openai import OpenAI
 
+from utils.openai_client import OpenAIClientWrapper
+
 """
 Позволяет работать как напрямую по .json субтитрам, так и автоматически
 извлекать субтитры по URL из файла urls.txt в корне проекта.
@@ -60,12 +62,9 @@ class SarsekenovProcessor:
         load_env()
         self.primary_model = primary_model
         self.refine_model = refine_model
-        self.client = OpenAI()
+        # Используем wrapper с автоматической обработкой таймаутов, retry и задержек
+        self.client = OpenAIClientWrapper()
         self.encoding = tiktoken.get_encoding("cl100k_base")
-        
-        # Задержка между запросами к OpenAI API (в секундах)
-        # Можно настроить через переменную окружения OPENAI_API_DELAY (по умолчанию 1.0 секунда)
-        self.api_delay = float(os.getenv("OPENAI_API_DELAY", "1.0"))
 
         # Загрузка конфигурации для экстракторов
         self.config = self._load_config()
@@ -354,12 +353,9 @@ class SarsekenovProcessor:
         return len(self.encoding.encode(text))
 
     def _ask(self, model: str, prompt: str, max_tokens: int = 2200, temperature: float = 0.3) -> str:
-        # Задержка перед запросом для избежания rate limit (429 ошибок)
-        # OpenAI API имеет лимиты: 3000 RPM для gpt-4o-mini
-        # Настраивается через переменную окружения OPENAI_API_DELAY (по умолчанию 1.0 секунда)
-        time.sleep(self.api_delay)
-        
-        r = self.client.chat.completions.create(
+        # Используем wrapper с автоматической обработкой задержек, retry и таймаутов
+        # Задержка и retry логика обрабатываются внутри wrapper
+        r = self.client.chat_completions_create(
             model=model,
             messages=[
                 {"role": "system", "content": "Ты редактор лекций Саламата Сарсекенова. Сохраняй терминологию нейросталкинга/неосталкинга и авторский стиль."},
