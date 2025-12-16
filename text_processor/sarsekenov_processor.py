@@ -58,7 +58,7 @@ class SarsekenovProcessor:
     поле внимания, осознавание, исследование переживаний, практики и упражнения.
     """
 
-    def __init__(self, primary_model: str = "gpt-4o-mini", refine_model: str = "gpt-5-mini"):
+    def __init__(self, primary_model: str = "gpt-4o-mini", refine_model: str = "gpt-4o-mini"):
         load_env()
         self.primary_model = primary_model
         self.refine_model = refine_model
@@ -2315,7 +2315,7 @@ class SarsekenovProcessor:
             
             if self.causal_extractor and sag_config.get('use_causal_chain_extractor', True):
                 try:
-                    causal_data = self.causal_extractor.extract(block_content=block["content"])
+                    causal_data = self.causal_extractor.extract(text=block["content"])
                     block["causal_chains"] = causal_data.get("processes", [])
                     if block["causal_chains"]:
                         print(f"[INFO] Блок {i+1}: найдено {len(block['causal_chains'])} причинно-следственных процессов")
@@ -2326,8 +2326,7 @@ class SarsekenovProcessor:
             if self.hierarchy_extractor and sag_config.get('use_concept_hierarchy_extractor', True):
                 try:
                     hierarchy_data = self.hierarchy_extractor.extract(
-                        block_content=block["content"],
-                        known_entities=block.get("graph_entities", [])
+                        text=block["content"]
                     )
                     block["concept_hierarchy"] = hierarchy_data.get("concepts", [])
                     if block["concept_hierarchy"]:
@@ -3065,7 +3064,7 @@ def main() -> int:
     ap.add_argument("--input", help="Файл или директория с субтитрами (.json). Если не указано, будет использован urls.txt")
     ap.add_argument("--output", default="data/sag_final", help="Директория для результатов SAG v2.0")
     ap.add_argument("--primary-model", default="gpt-4o-mini", help="Основная модель для нарезки")
-    ap.add_argument("--refine-model", default="gpt-5-mini", help="Модель для полировки")
+    ap.add_argument("--refine-model", default="gpt-4o-mini", help="Модель для полировки")
     ap.add_argument("--urls-file", default=str(PROJECT_ROOT / "urls.txt"), help="Файл со списком URL (по одному на строку)")
     ap.add_argument("--language", default="ru", help="Предпочитаемый язык субтитров для загрузки")
     args = ap.parse_args()

@@ -2,23 +2,23 @@
   {
     "youtube_url": "https://youtu.be/TdupVjWWEqI?si=pKLSRBA8YmsLlnJq",
     "custom_name": null,
-    "pipeline_start": "2025-12-16 12:28:58",
+    "pipeline_start": "2025-12-16 16:15:29",
     "schema_version": "2.0",
     "processing_version": "v2.1",
     "stages": {
       "subtitles": {
         "status": "success",
-        "duration": 1.2414963245391846,
+        "duration": 1.372671127319336,
         "json_path": "data\\raw_subtitles\\2025\\05\\2025-05-27_TdupVjWWEqI_За_Пределами_Мышления.json",
         "srt_path": "data\\raw_subtitles\\2025\\05\\2025-05-27_TdupVjWWEqI_За_Пределами_Мышления.srt",
         "txt_path": "data\\raw_subtitles\\2025\\05\\2025-05-27_TdupVjWWEqI_За_Пределами_Мышления.txt"
       },
       "text_processing": {
         "status": "success",
-        "duration": 712.8197546005249,
+        "duration": 227.7085738182068,
         "sag_v2_output": "data\\sag_final\\2025\\05\\2025-05-27_TdupVjWWEqI_За_Пределами_Мышления.for_vector.json",
         "review_markdown": "data\\sag_final\\2025\\05\\2025-05-27_TdupVjWWEqI_За_Пределами_Мышления.for_review.md",
-        "blocks_created": 6,
+        "blocks_created": 8,
         "schema_version": "2.0"
       },
       "pipeline_complete": {
@@ -27,24 +27,24 @@
       },
       "vector_indexing": {
         "status": "success",
-        "duration": 1.8825936317443848,
+        "duration": 89.36694121360779,
         "indexed": {
           "documents": 1,
-          "blocks": 6,
-          "graph_entities": 26,
-          "knowledge_graph": 30
+          "blocks": 8,
+          "graph_entities": 33,
+          "knowledge_graph": 33
         }
       }
     },
     "status": "success",
     "video_id": "TdupVjWWEqI",
-    "total_duration": 714.7577970027924,
-    "pipeline_end": "2025-12-16 12:40:53",
+    "total_duration": 229.98236751556396,
+    "pipeline_end": "2025-12-16 16:19:19",
     "final_outputs": {
       "sag_v2_json": "data\\sag_final\\2025\\05\\2025-05-27_TdupVjWWEqI_За_Пределами_Мышления.for_vector.json",
       "review_markdown": "data\\sag_final\\2025\\05\\2025-05-27_TdupVjWWEqI_За_Пределами_Мышления.for_review.md"
     },
-    "blocks_created": 6,
-    "entities_extracted": 34
+    "blocks_created": 8,
+    "entities_extracted": 44
   }
 ]

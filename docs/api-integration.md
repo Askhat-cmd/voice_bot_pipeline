@@ -49,7 +49,7 @@ python pipeline_orchestrator.py --config config.yaml --domain generic
 python pipeline_orchestrator.py --config config.yaml --url "..." --name "Лекция_1"
 
 # 🆕 SAG v2.0 Прямая обработка с доменным процессором
-python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 ```
 
 ### Только извлечение субтитров
@@ -72,10 +72,10 @@ python subtitle_extractor\get_subtitles.py --language en
 
 ```powershell
 # 🆕 SAG v2.0 Доменный процессор (Сарсекенов)
-python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 
 # 🆕 SAG v2.0 с кастомными настройками
-python -m text_processor.sarsekenov_processor --input data/subtitles --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 
 # Универсальный процессор (базовая схема v1.0)
 python text_processor\subtitles_to_blocks.py --input data\subtitles --output data\vector_ready
@@ -107,7 +107,7 @@ extractor.process_url("https://youtu.be/VIDEO_ID")
 # 🆕 SAG v2.0 Обработка в блоки
 processor = SarsekenovProcessor(
     primary_model="gpt-4o-mini",
-    refine_model="gpt-5-mini"
+    refine_model="gpt-4o-mini"
 )
 result = processor.process_file(
     Path("data/subtitles/VIDEO_ID.json"),

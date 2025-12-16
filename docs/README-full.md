@@ -1745,9 +1745,9 @@ SENTENCE_TRANSFORMERS_MODEL=intfloat/multilingual-e5-large
 # SENTENCE_TRANSFORMERS_DEVICE=cuda  # Раскомментируйте для принудительного использования GPU
 
 # Модель для полировки результатов (опционально)
-# Рекомендуется: gpt-5-mini (дешевле чем gpt-4)
+# Рекомендуется: gpt-4o-mini (дешевле чем gpt-4)
 # Оставьте пустым для отключения
-REFINE_MODEL=gpt-5-mini
+REFINE_MODEL=gpt-4o-mini
 
 # Задержка между запросами к OpenAI API (в секундах)
 # По умолчанию: 1.0 секунда
@@ -1787,7 +1787,7 @@ https://youtube.com/live/LIVE_ID_3
 python pipeline_orchestrator.py --config config.yaml
 
 # 🆕 SAG v2.0 Прямая обработка с доменным процессором
-python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 ```
 
 **🎯 Что происходит:**
@@ -1869,10 +1869,10 @@ PRIMARY_MODEL=gpt-4o-mini
 
 # Модель для финальной полировки (опционально)
 # Варианты:
-# - gpt-5-mini: дешево, хорошо для полировки (РЕКОМЕНДУЕТСЯ)
+# - gpt-4o-mini: дешево, хорошо для полировки (РЕКОМЕНДУЕТСЯ)
 # - gpt-4: дорого, отлично для полировки
 # - "" (пустая строка): отключить полировку
-REFINE_MODEL=gpt-5-mini
+REFINE_MODEL=gpt-4o-mini
 
 # Модель для создания эмбеддингов (векторизация)
 # Используется Sentence-Transformers для локальной генерации эмбеддингов
@@ -1951,7 +1951,7 @@ GOOGLE_CLOUD_PROJECT=your-project-id
 python pipeline_orchestrator.py --config config.yaml --domain sarsekenov
 
 # 🆕 SAG v2.0 Прямая обработка с доменным процессором
-python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 
 # Универсальный режим (базовая схема v1.0)
 python pipeline_orchestrator.py --config config.yaml --domain generic
@@ -2254,7 +2254,7 @@ python pipeline_orchestrator.py --config config.yaml --domain generic
 python pipeline_orchestrator.py --config config.yaml --url "..." --name "Лекция_1"
 
 # 🆕 SAG v2.0 Прямая обработка с доменным процессором
-python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 ```
 
 #### Только извлечение субтитров
@@ -2277,10 +2277,10 @@ python subtitle_extractor\get_subtitles.py --language en
 
 ```powershell
 # 🆕 SAG v2.0 Доменный процессор (Сарсекенов)
-python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 
 # 🆕 SAG v2.0 с кастомными настройками
-python -m text_processor.sarsekenov_processor --input data/subtitles --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 
 # Универсальный процессор (базовая схема v1.0)
 python text_processor\subtitles_to_blocks.py --input data\subtitles --output data\vector_ready
@@ -2310,7 +2310,7 @@ extractor.process_url("https://youtu.be/VIDEO_ID")
 # 🆕 SAG v2.0 Обработка в блоки
 processor = SarsekenovProcessor(
     primary_model="gpt-4o-mini",
-    refine_model="gpt-5-mini"
+    refine_model="gpt-4o-mini"
 )
 result = processor.process_file(
     Path("data/subtitles/VIDEO_ID.json"),
@@ -2526,7 +2526,7 @@ for f in Path('data/sag_final').glob('*.for_vector.json'):
 from .sarsekenov_processor import SarsekenovProcessor
 
 class MyDomainProcessor(SarsekenovProcessor):
-    def __init__(self, primary_model="gpt-4o-mini", refine_model="gpt-5-mini"):
+    def __init__(self, primary_model="gpt-4o-mini", refine_model="gpt-4o-mini"):
         super().__init__(primary_model, refine_model)
         
         # Доменные указания
@@ -2785,7 +2785,7 @@ PRIMARY_MODEL=gpt-4o-mini
 REFINE_MODEL=
 
 # 🆕 SAG v2.0 Проверка отдельного блока
-python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 ```
 
 **Примечание**: Система автоматически добавляет задержку между запросами к OpenAI API для избежания rate limit ошибок. По умолчанию задержка составляет 1.0 секунду. Если вы видите много ошибок 429, увеличьте значение `OPENAI_API_DELAY` в `.env` файле до 2.0-3.0 секунд.
@@ -2970,7 +2970,7 @@ git commit -m "Remove .env from tracking"
 ```bash
 # Создайте .env.example с примером структуры
 OPENAI_API_KEY=your_openai_api_key_here
-REFINE_MODEL=gpt-5-mini
+REFINE_MODEL=gpt-4o-mini
 PRIMARY_MODEL=gpt-4o-mini
 ```
 
@@ -3118,7 +3118,7 @@ git rm --cached large_file.mp4
 
 ### 🆕 **SAG v2.0 Лучшие практики**
 
-7. **Используйте современные модели**: `gpt-4o-mini` + `gpt-5-mini`
+7. **Используйте современные модели**: `gpt-4o-mini` + `gpt-4o-mini`
 8. **Проверяйте SAG Readiness Score**: Должен быть 80%+
 9. **Валидируйте overview_length**: Минимум 200 символов
 10. **Мониторьте граф-сущности**: 10+ сущностей для качества

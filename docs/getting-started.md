@@ -102,9 +102,9 @@ YOUTUBE_API_KEY=AIzaSyD7VKqPUiiJYI3XYy6nwYFwUcfZNblQU4w
 PRIMARY_MODEL=gpt-4o-mini
 
 # Модель для полировки результатов (опционально)
-# Рекомендуется: gpt-5-mini (дешевле чем gpt-4)
+# Рекомендуется: gpt-4o-mini (дешевле чем gpt-4)
 # Оставьте пустым для отключения полировки
-REFINE_MODEL=gpt-5-mini
+REFINE_MODEL=gpt-4o-mini
 
 # Задержка между запросами к OpenAI API (в секундах)
 # По умолчанию: 1.0 секунда
@@ -173,7 +173,7 @@ REFINE_MODEL=
 
 ```env
 PRIMARY_MODEL=gpt-4o-mini
-REFINE_MODEL=gpt-5-mini
+REFINE_MODEL=gpt-4o-mini
 ```
 
 #### Вариант 3: Максимальное качество
@@ -228,7 +228,7 @@ python pipeline_orchestrator.py --config config.yaml
 
 ```powershell
 # 🆕 SAG v2.0 Прямая обработка с доменным процессором
-python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 ```
 
 #### Вариант 3: Только извлечение субтитров
@@ -351,7 +351,7 @@ PRIMARY_MODEL=gpt-4o-mini
 REFINE_MODEL=
 
 # 🆕 SAG v2.0 Проверка отдельного блока
-python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-5-mini
+python -m text_processor.sarsekenov_processor --input data/subtitles/VIDEO_ID.json --output data/sag_final --primary-model gpt-4o-mini --refine-model gpt-4o-mini
 ```
 
 **Примечание**: Система автоматически добавляет задержку между запросами к OpenAI API для избежания rate limit ошибок. По умолчанию задержка составляет 1.0 секунду. Если вы видите много ошибок 429, увеличьте значение `OPENAI_API_DELAY` в `.env` файле до 2.0-3.0 секунд.
