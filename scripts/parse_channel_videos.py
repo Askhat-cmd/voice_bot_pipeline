@@ -460,10 +460,10 @@ class ChannelParser:
         for idx, video in enumerate(videos_metadata, 1):
             video_id = video['video_id']
             date = self.format_date(video['published_at'])
-            title = video['title'].replace('|', '\\|')  # Экранирование для таблицы
+            title = video['title'].replace('|', '\\|').replace('\n', ' ').replace('\r', '')  # Экранирование для таблицы
             playlists = video_playlists_map.get(video_id, [])
             playlist_str = ', '.join(playlists) if playlists else 'Нет плейлиста'
-            playlist_str = playlist_str.replace('|', '\\|')  # Экранирование
+            playlist_str = playlist_str.replace('|', '\\|').replace('\n', ' ').replace('\r', '')  # Экранирование
             views = self.format_view_count(video['view_count'])
             duration = self.format_duration(video.get('duration_seconds', 0))
             url = video['url']
