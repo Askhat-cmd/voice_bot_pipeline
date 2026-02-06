@@ -1,0 +1,434 @@
+[
+  {
+    "youtube_url": "https://youtu.be/GrnXmKBkhEw?si=CbC9BBRzPGQ_ypx2",
+    "custom_name": null,
+    "pipeline_start": "2026-02-05 12:23:13",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.5898890495300293,
+        "json_path": "data\\raw_subtitles\\2024\\07\\2024-07-08_GrnXmKBkhEw_НЕОСТАЛКИНГ_1_сессия_Основы_Всего_Курс_Мастера.json",
+        "srt_path": "data\\raw_subtitles\\2024\\07\\2024-07-08_GrnXmKBkhEw_НЕОСТАЛКИНГ_1_сессия_Основы_Всего_Курс_Мастера.srt",
+        "txt_path": "data\\raw_subtitles\\2024\\07\\2024-07-08_GrnXmKBkhEw_НЕОСТАЛКИНГ_1_сессия_Основы_Всего_Курс_Мастера.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 986.787534236908,
+        "sag_v2_output": "data\\sag_final\\2024\\07\\2024-07-08_GrnXmKBkhEw_НЕОСТАЛКИНГ_1_сессия_Основы_Всего_Курс_Мастера.for_vector.json",
+        "review_markdown": "data\\sag_final\\2024\\07\\2024-07-08_GrnXmKBkhEw_НЕОСТАЛКИНГ_1_сессия_Основы_Всего_Курс_Мастера.for_review.md",
+        "blocks_created": 28,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 5.229357957839966,
+        "indexed": {
+          "documents": 1,
+          "blocks": 28,
+          "graph_entities": 85,
+          "knowledge_graph": 85
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "GrnXmKBkhEw",
+    "total_duration": 989.1660768985748,
+    "pipeline_end": "2026-02-05 12:39:43",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2024\\07\\2024-07-08_GrnXmKBkhEw_НЕОСТАЛКИНГ_1_сессия_Основы_Всего_Курс_Мастера.for_vector.json",
+      "review_markdown": "data\\sag_final\\2024\\07\\2024-07-08_GrnXmKBkhEw_НЕОСТАЛКИНГ_1_сессия_Основы_Всего_Курс_Мастера.for_review.md"
+    },
+    "blocks_created": 28,
+    "entities_extracted": 224
+  },
+  {
+    "youtube_url": "https://youtu.be/G8ZDVXNczjQ?si=FAUgmbLEgnvMh2aW",
+    "custom_name": null,
+    "pipeline_start": "2026-02-05 12:39:48",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.611725091934204,
+        "json_path": "data\\raw_subtitles\\2024\\08\\2024-08-04_G8ZDVXNczjQ_НеоСталкинг_2_сессия_Суть_Присутствие_Проявление.json",
+        "srt_path": "data\\raw_subtitles\\2024\\08\\2024-08-04_G8ZDVXNczjQ_НеоСталкинг_2_сессия_Суть_Присутствие_Проявление.srt",
+        "txt_path": "data\\raw_subtitles\\2024\\08\\2024-08-04_G8ZDVXNczjQ_НеоСталкинг_2_сессия_Суть_Присутствие_Проявление.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 885.8411622047424,
+        "sag_v2_output": "data\\sag_final\\2024\\08\\2024-08-04_G8ZDVXNczjQ_НеоСталкинг_2_сессия_Суть_Присутствие_Проявление.for_vector.json",
+        "review_markdown": "data\\sag_final\\2024\\08\\2024-08-04_G8ZDVXNczjQ_НеоСталкинг_2_сессия_Суть_Присутствие_Проявление.for_review.md",
+        "blocks_created": 37,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 4.9968109130859375,
+        "indexed": {
+          "documents": 1,
+          "blocks": 37,
+          "graph_entities": 111,
+          "knowledge_graph": 111
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "G8ZDVXNczjQ",
+    "total_duration": 887.9745118618011,
+    "pipeline_end": "2026-02-05 12:54:36",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2024\\08\\2024-08-04_G8ZDVXNczjQ_НеоСталкинг_2_сессия_Суть_Присутствие_Проявление.for_vector.json",
+      "review_markdown": "data\\sag_final\\2024\\08\\2024-08-04_G8ZDVXNczjQ_НеоСталкинг_2_сессия_Суть_Присутствие_Проявление.for_review.md"
+    },
+    "blocks_created": 37,
+    "entities_extracted": 217
+  },
+  {
+    "youtube_url": "https://youtu.be/VipQC_wxLSU?si=wra7rfGv5sKUjqSt",
+    "custom_name": null,
+    "pipeline_start": "2026-02-05 12:54:41",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.4484758377075195,
+        "json_path": "data\\raw_subtitles\\2024\\08\\2024-08-13_VipQC_wxLSU_НеоСталкинг_3_сессия_Нейрофизиология_Пробуждения.json",
+        "srt_path": "data\\raw_subtitles\\2024\\08\\2024-08-13_VipQC_wxLSU_НеоСталкинг_3_сессия_Нейрофизиология_Пробуждения.srt",
+        "txt_path": "data\\raw_subtitles\\2024\\08\\2024-08-13_VipQC_wxLSU_НеоСталкинг_3_сессия_Нейрофизиология_Пробуждения.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 587.7451038360596,
+        "sag_v2_output": "data\\sag_final\\2024\\08\\2024-08-13_VipQC_wxLSU_НеоСталкинг_3_сессия_Нейрофизиология_Пробуждения.for_vector.json",
+        "review_markdown": "data\\sag_final\\2024\\08\\2024-08-13_VipQC_wxLSU_НеоСталкинг_3_сессия_Нейрофизиология_Пробуждения.for_review.md",
+        "blocks_created": 31,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 4.631591796875,
+        "indexed": {
+          "documents": 1,
+          "blocks": 31,
+          "graph_entities": 114,
+          "knowledge_graph": 114
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "VipQC_wxLSU",
+    "total_duration": 589.711847782135,
+    "pipeline_end": "2026-02-05 13:04:31",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2024\\08\\2024-08-13_VipQC_wxLSU_НеоСталкинг_3_сессия_Нейрофизиология_Пробуждения.for_vector.json",
+      "review_markdown": "data\\sag_final\\2024\\08\\2024-08-13_VipQC_wxLSU_НеоСталкинг_3_сессия_Нейрофизиология_Пробуждения.for_review.md"
+    },
+    "blocks_created": 31,
+    "entities_extracted": 194
+  },
+  {
+    "youtube_url": "https://youtu.be/41pRyh8zJwI?si=98-LrEGdXCLDcNys",
+    "custom_name": null,
+    "pipeline_start": "2026-02-05 13:04:36",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.5342423915863037,
+        "json_path": "data\\raw_subtitles\\2024\\09\\2024-09-02_41pRyh8zJwI_4_сессия_НеоСталкинг.json",
+        "srt_path": "data\\raw_subtitles\\2024\\09\\2024-09-02_41pRyh8zJwI_4_сессия_НеоСталкинг.srt",
+        "txt_path": "data\\raw_subtitles\\2024\\09\\2024-09-02_41pRyh8zJwI_4_сессия_НеоСталкинг.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 351.6742012500763,
+        "sag_v2_output": "data\\sag_final\\2024\\09\\2024-09-02_41pRyh8zJwI_4_сессия_НеоСталкинг.for_vector.json",
+        "review_markdown": "data\\sag_final\\2024\\09\\2024-09-02_41pRyh8zJwI_4_сессия_НеоСталкинг.for_review.md",
+        "blocks_created": 11,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 2.424166440963745,
+        "indexed": {
+          "documents": 1,
+          "blocks": 11,
+          "graph_entities": 51,
+          "knowledge_graph": 51
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "41pRyh8zJwI",
+    "total_duration": 353.6698715686798,
+    "pipeline_end": "2026-02-05 13:10:29",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2024\\09\\2024-09-02_41pRyh8zJwI_4_сессия_НеоСталкинг.for_vector.json",
+      "review_markdown": "data\\sag_final\\2024\\09\\2024-09-02_41pRyh8zJwI_4_сессия_НеоСталкинг.for_review.md"
+    },
+    "blocks_created": 11,
+    "entities_extracted": 68
+  },
+  {
+    "youtube_url": "https://youtu.be/_z5MkKWl5vQ?si=MdnvMMq_n2fwFWFi",
+    "custom_name": null,
+    "pipeline_start": "2026-02-05 13:10:32",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.4287707805633545,
+        "json_path": "data\\raw_subtitles\\2025\\08\\2025-08-31__z5MkKWl5vQ_5_сессия_НеоСталкинг_Преобразование_эмоций.json",
+        "srt_path": "data\\raw_subtitles\\2025\\08\\2025-08-31__z5MkKWl5vQ_5_сессия_НеоСталкинг_Преобразование_эмоций.srt",
+        "txt_path": "data\\raw_subtitles\\2025\\08\\2025-08-31__z5MkKWl5vQ_5_сессия_НеоСталкинг_Преобразование_эмоций.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 522.3456952571869,
+        "sag_v2_output": "data\\sag_final\\2025\\08\\2025-08-31__z5MkKWl5vQ_5_сессия_НеоСталкинг_Преобразование_эмоций.for_vector.json",
+        "review_markdown": "data\\sag_final\\2025\\08\\2025-08-31__z5MkKWl5vQ_5_сессия_НеоСталкинг_Преобразование_эмоций.for_review.md",
+        "blocks_created": 25,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 3.7521443367004395,
+        "indexed": {
+          "documents": 1,
+          "blocks": 25,
+          "graph_entities": 89,
+          "knowledge_graph": 89
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "_z5MkKWl5vQ",
+    "total_duration": 524.1829750537872,
+    "pipeline_end": "2026-02-05 13:19:16",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2025\\08\\2025-08-31__z5MkKWl5vQ_5_сессия_НеоСталкинг_Преобразование_эмоций.for_vector.json",
+      "review_markdown": "data\\sag_final\\2025\\08\\2025-08-31__z5MkKWl5vQ_5_сессия_НеоСталкинг_Преобразование_эмоций.for_review.md"
+    },
+    "blocks_created": 25,
+    "entities_extracted": 165
+  },
+  {
+    "youtube_url": "https://youtu.be/yHra4m2qEl4?si=DigPiGUgOUi0KEFJ",
+    "custom_name": null,
+    "pipeline_start": "2026-02-05 13:19:20",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.5305466651916504,
+        "json_path": "data\\raw_subtitles\\2024\\10\\2024-10-06_yHra4m2qEl4_6_сессия_НеоСталкинг_Курс_Мастера.json",
+        "srt_path": "data\\raw_subtitles\\2024\\10\\2024-10-06_yHra4m2qEl4_6_сессия_НеоСталкинг_Курс_Мастера.srt",
+        "txt_path": "data\\raw_subtitles\\2024\\10\\2024-10-06_yHra4m2qEl4_6_сессия_НеоСталкинг_Курс_Мастера.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 647.2544581890106,
+        "sag_v2_output": "data\\sag_final\\2024\\10\\2024-10-06_yHra4m2qEl4_6_сессия_НеоСталкинг_Курс_Мастера.for_vector.json",
+        "review_markdown": "data\\sag_final\\2024\\10\\2024-10-06_yHra4m2qEl4_6_сессия_НеоСталкинг_Курс_Мастера.for_review.md",
+        "blocks_created": 30,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 3.9264063835144043,
+        "indexed": {
+          "documents": 1,
+          "blocks": 30,
+          "graph_entities": 94,
+          "knowledge_graph": 94
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "yHra4m2qEl4",
+    "total_duration": 649.3042838573456,
+    "pipeline_end": "2026-02-05 13:30:09",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2024\\10\\2024-10-06_yHra4m2qEl4_6_сессия_НеоСталкинг_Курс_Мастера.for_vector.json",
+      "review_markdown": "data\\sag_final\\2024\\10\\2024-10-06_yHra4m2qEl4_6_сессия_НеоСталкинг_Курс_Мастера.for_review.md"
+    },
+    "blocks_created": 30,
+    "entities_extracted": 188
+  },
+  {
+    "youtube_url": "https://youtu.be/Ue3aRBJ0LDI?si=0NwO2UzOWmnNTl-A",
+    "custom_name": null,
+    "pipeline_start": "2026-02-05 13:30:13",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.5218350887298584,
+        "json_path": "data\\raw_subtitles\\2024\\10\\2024-10-13_Ue3aRBJ0LDI_7_сессия_НеоСталкинг_Курс_Мастера.json",
+        "srt_path": "data\\raw_subtitles\\2024\\10\\2024-10-13_Ue3aRBJ0LDI_7_сессия_НеоСталкинг_Курс_Мастера.srt",
+        "txt_path": "data\\raw_subtitles\\2024\\10\\2024-10-13_Ue3aRBJ0LDI_7_сессия_НеоСталкинг_Курс_Мастера.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 1075.3014261722565,
+        "sag_v2_output": "data\\sag_final\\2024\\10\\2024-10-13_Ue3aRBJ0LDI_7_сессия_НеоСталкинг_Курс_Мастера.for_vector.json",
+        "review_markdown": "data\\sag_final\\2024\\10\\2024-10-13_Ue3aRBJ0LDI_7_сессия_НеоСталкинг_Курс_Мастера.for_review.md",
+        "blocks_created": 33,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 4.5175511837005615,
+        "indexed": {
+          "documents": 1,
+          "blocks": 33,
+          "graph_entities": 99,
+          "knowledge_graph": 99
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "Ue3aRBJ0LDI",
+    "total_duration": 1077.3450977802277,
+    "pipeline_end": "2026-02-05 13:48:11",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2024\\10\\2024-10-13_Ue3aRBJ0LDI_7_сессия_НеоСталкинг_Курс_Мастера.for_vector.json",
+      "review_markdown": "data\\sag_final\\2024\\10\\2024-10-13_Ue3aRBJ0LDI_7_сессия_НеоСталкинг_Курс_Мастера.for_review.md"
+    },
+    "blocks_created": 33,
+    "entities_extracted": 220
+  },
+  {
+    "youtube_url": "https://youtu.be/hLaWBnHLVlI?si=DebvH9ndk1g3ahpT",
+    "custom_name": null,
+    "pipeline_start": "2026-02-05 13:48:15",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.5029966831207275,
+        "json_path": "data\\raw_subtitles\\2024\\10\\2024-10-27_hLaWBnHLVlI_8_сессия_НеоСталкинга_Врожденные_и_Приобретенные.json",
+        "srt_path": "data\\raw_subtitles\\2024\\10\\2024-10-27_hLaWBnHLVlI_8_сессия_НеоСталкинга_Врожденные_и_Приобретенные.srt",
+        "txt_path": "data\\raw_subtitles\\2024\\10\\2024-10-27_hLaWBnHLVlI_8_сессия_НеоСталкинга_Врожденные_и_Приобретенные.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 666.3973860740662,
+        "sag_v2_output": "data\\sag_final\\2024\\10\\2024-10-27_hLaWBnHLVlI_8_сессия_НеоСталкинга_Врожденные_и_Приобретенные.for_vector.json",
+        "review_markdown": "data\\sag_final\\2024\\10\\2024-10-27_hLaWBnHLVlI_8_сессия_НеоСталкинга_Врожденные_и_Приобретенные.for_review.md",
+        "blocks_created": 27,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 3.9530763626098633,
+        "indexed": {
+          "documents": 1,
+          "blocks": 27,
+          "graph_entities": 86,
+          "knowledge_graph": 86
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "hLaWBnHLVlI",
+    "total_duration": 668.3841140270233,
+    "pipeline_end": "2026-02-05 13:59:24",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2024\\10\\2024-10-27_hLaWBnHLVlI_8_сессия_НеоСталкинга_Врожденные_и_Приобретенные.for_vector.json",
+      "review_markdown": "data\\sag_final\\2024\\10\\2024-10-27_hLaWBnHLVlI_8_сессия_НеоСталкинга_Врожденные_и_Приобретенные.for_review.md"
+    },
+    "blocks_created": 27,
+    "entities_extracted": 153
+  },
+  {
+    "youtube_url": "https://youtu.be/XwHpw0Z7Wks?si=jED3B_wKdJMvL9tE",
+    "custom_name": null,
+    "pipeline_start": "2026-02-05 13:59:28",
+    "schema_version": "2.0",
+    "processing_version": "v2.1",
+    "stages": {
+      "subtitles": {
+        "status": "success",
+        "duration": 1.418175458908081,
+        "json_path": "data\\raw_subtitles\\2024\\11\\2024-11-11_XwHpw0Z7Wks_9_сессия_НеоСталкинг_Время_как_инструмент.json",
+        "srt_path": "data\\raw_subtitles\\2024\\11\\2024-11-11_XwHpw0Z7Wks_9_сессия_НеоСталкинг_Время_как_инструмент.srt",
+        "txt_path": "data\\raw_subtitles\\2024\\11\\2024-11-11_XwHpw0Z7Wks_9_сессия_НеоСталкинг_Время_как_инструмент.txt"
+      },
+      "text_processing": {
+        "status": "success",
+        "duration": 815.3367357254028,
+        "sag_v2_output": "data\\sag_final\\2024\\11\\2024-11-11_XwHpw0Z7Wks_9_сессия_НеоСталкинг_Время_как_инструмент.for_vector.json",
+        "review_markdown": "data\\sag_final\\2024\\11\\2024-11-11_XwHpw0Z7Wks_9_сессия_НеоСталкинг_Время_как_инструмент.for_review.md",
+        "blocks_created": 21,
+        "schema_version": "2.0"
+      },
+      "pipeline_complete": {
+        "status": "success",
+        "duration": 0.0
+      },
+      "vector_indexing": {
+        "status": "success",
+        "duration": 38.349034786224365,
+        "indexed": {
+          "documents": 1,
+          "blocks": 21,
+          "graph_entities": 56,
+          "knowledge_graph": 56
+        }
+      }
+    },
+    "status": "success",
+    "video_id": "XwHpw0Z7Wks",
+    "total_duration": 817.209894657135,
+    "pipeline_end": "2026-02-05 14:13:05",
+    "final_outputs": {
+      "sag_v2_json": "data\\sag_final\\2024\\11\\2024-11-11_XwHpw0Z7Wks_9_сессия_НеоСталкинг_Время_как_инструмент.for_vector.json",
+      "review_markdown": "data\\sag_final\\2024\\11\\2024-11-11_XwHpw0Z7Wks_9_сессия_НеоСталкинг_Время_как_инструмент.for_review.md"
+    },
+    "blocks_created": 21,
+    "entities_extracted": 116
+  }
+]
