@@ -172,8 +172,8 @@ class MarkdownUpdater:
             parts.insert(-1, status_symbol)
             parts.insert(-1, processed_date)
         
-        # Формируем строку обратно
-        return '| ' + ' | '.join(parts) + ' |\n'
+        # Формируем строку обратно (без \n - join добавит сам)
+        return '| ' + ' | '.join(parts) + ' |'
     
     def update_after_processing(self, video_id: str) -> bool:
         """
