@@ -1,0 +1,27 @@
+﻿{
+  "author_id": "salamat",
+  "extends": "base_graph",
+  "description": "Авторские концепты Саламата Сарсекенова",
+  "custom_nodes": [
+    {
+      "id": "neurostalking",
+      "label": "Нейросталкинг",
+      "author_term": true,
+      "maps_to_universal": "self_observation",
+      "sd_levels": ["GREEN", "YELLOW"],
+      "description": "Метод наблюдения за собственными паттернами реагирования"
+    },
+    {
+      "id": "presence_state",
+      "label": "Состояние присутствия",
+      "author_term": true,
+      "maps_to_universal": "grounding",
+      "sd_levels": ["GREEN", "YELLOW"]
+    }
+  ],
+  "custom_edges": [
+    {"from": "neurostalking", "to": "anxiety", "type": "addresses", "weight": 0.90},
+    {"from": "neurostalking", "to": "self_observation", "type": "similar_to", "weight": 0.95},
+    {"from": "presence_state", "to": "grounding", "type": "similar_to", "weight": 0.90}
+  ]
+}

@@ -156,7 +156,11 @@ class VectorIndexer:
                     "start": block.get("start", ""),
                     "end": block.get("end", ""),
                     "block_type": block.get("block_type", ""),
-                    "emotional_tone": block.get("emotional_tone", ""),
+                    "emotional_tone": block.get("sd_metadata", {}).get(
+                        "emotional_tone",
+                        block.get("emotional_tone", ""),
+                    ),
+                    "block_emotional_tone": block.get("emotional_tone", ""),
                     "conceptual_depth": block.get("conceptual_depth", ""),
                     "complexity_score": str(block.get("complexity_score", 0.0)),
                     "collection_target": sag_data.get("document_metadata", {}).get("collection_target", ""),
@@ -168,6 +172,13 @@ class VectorIndexer:
                     "has_case_studies": str(bool(block.get("case_studies"))),
                     "has_prerequisites": str(bool(block.get("prerequisites", {}).get("prerequisites"))),
                     "has_concept_hierarchy": str(bool(block.get("concept_hierarchy"))),
+                    # SD-метаданные (fallback GREEN для безопасной деградации)
+                    "sd_level": block.get("sd_metadata", {}).get("sd_level", "GREEN"),
+                    "sd_secondary": block.get("sd_metadata", {}).get("sd_secondary") or "",
+                    "requires_prior_concepts": str(
+                        bool(block.get("sd_metadata", {}).get("requires_prior_concepts", False))
+                    ),
+                    "author_id": block.get("sd_metadata", {}).get("author_id", "unknown"),
                 }
                 metadatas_list.append(metadata)
             
@@ -480,4 +491,3 @@ class VectorIndexer:
             results["error"] = str(e)
         
         return results
-

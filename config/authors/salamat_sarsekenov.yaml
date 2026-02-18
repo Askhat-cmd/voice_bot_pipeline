@@ -1,0 +1,11 @@
+﻿author_id: "salamat"
+display_name: "Саламат Сарсекенов"
+youtube_channel_id: ""
+primary_sd_levels: ["GREEN", "YELLOW"]
+language: "ru"
+terminology_file: "config/terminology/salamat_terms.yaml"
+collection_name: "salamat_blocks"
+active: true
+description: >
+  Нейросталкинг, работа с состояниями, осознанностью, внутренними конфликтами.
+  Фокус: GREEN (эмпатия, чувства) и YELLOW (системное мышление, метанаблюдение).

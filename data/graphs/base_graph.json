@@ -1,0 +1,108 @@
+﻿{
+  "version": "1.0",
+  "description": "Universal psychological concepts graph — shared across all authors",
+  "nodes": [
+    {
+      "id": "anxiety", "label": "Тревога", "type": "emotion",
+      "sd_levels": ["PURPLE","RED","BLUE","ORANGE","GREEN","YELLOW"],
+      "sd_adaptations": {
+        "PURPLE": "Страх неизвестного, потеря защиты коллектива",
+        "RED": "Угроза контролю или уважению",
+        "BLUE": "Страх нарушить правило или потерять порядок",
+        "ORANGE": "Риск не достичь цели или потерять позиции",
+        "GREEN": "Внутреннее беспокойство, разрыв с собой или другими",
+        "YELLOW": "Сигнал системы о рассогласованности паттернов"
+      }
+    },
+    {
+      "id": "anger", "label": "Гнев", "type": "emotion",
+      "sd_levels": ["RED","BLUE","ORANGE","GREEN"],
+      "sd_adaptations": {
+        "RED": "Нарушение моей воли или уважения",
+        "BLUE": "Нарушение справедливости или правила",
+        "ORANGE": "Препятствие к цели",
+        "GREEN": "Сигнал о нарушении моих границ или ценностей"
+      }
+    },
+    {
+      "id": "shame", "label": "Стыд", "type": "emotion",
+      "sd_levels": ["PURPLE","BLUE","ORANGE","GREEN"]
+    },
+    {
+      "id": "guilt", "label": "Вина", "type": "emotion",
+      "sd_levels": ["BLUE","GREEN"],
+      "sd_adaptations": {
+        "BLUE": "Нарушение обязанности или правила",
+        "GREEN": "Причинение боли другому человеку"
+      }
+    },
+    {
+      "id": "fear", "label": "Страх", "type": "emotion",
+      "sd_levels": ["BEIGE","PURPLE","RED","BLUE"]
+    },
+    {
+      "id": "loneliness", "label": "Одиночество", "type": "emotion",
+      "sd_levels": ["PURPLE","BLUE","GREEN"]
+    },
+    {
+      "id": "confusion", "label": "Замешательство", "type": "emotion",
+      "sd_levels": ["BLUE","ORANGE","GREEN","YELLOW"]
+    },
+    {
+      "id": "emptiness", "label": "Пустота / Бессмысленность", "type": "emotion",
+      "sd_levels": ["ORANGE","GREEN","YELLOW"],
+      "sd_adaptations": {
+        "ORANGE": "Достиг целей, но удовлетворения нет — кризис ORANGE",
+        "GREEN": "Потеря связи с собой или другими",
+        "YELLOW": "Исчерпание старых смысловых систем"
+      }
+    },
+    {
+      "id": "breathing_practice", "label": "Дыхательные практики", "type": "practice",
+      "sd_levels": ["RED","BLUE","ORANGE","GREEN","YELLOW"],
+      "sd_adaptations": {
+        "RED": "Дыши — это контроль над собой. Сила через дыхание.",
+        "BLUE": "Техника: 4 счёта вдох, 7 задержка, 8 выдох. Повторить 3 раза.",
+        "ORANGE": "Снижает кортизол за 5 минут. Работает через регуляцию CO2.",
+        "GREEN": "Дыхание помогает вернуться к себе и своим чувствам.",
+        "YELLOW": "Переключение нервной системы из симпатики в парасимпатику."
+      }
+    },
+    {
+      "id": "grounding", "label": "Заземление", "type": "practice",
+      "sd_levels": ["BEIGE","PURPLE","RED","BLUE","GREEN","YELLOW"],
+      "sd_adaptations": {
+        "BEIGE": "Почувствуй ноги на полу. Ты здесь. Ты в безопасности.",
+        "PURPLE": "Почувствуй землю под ногами, как чувствовали предки.",
+        "RED": "Вернись в тело. Ты здесь, ты сильный.",
+        "BLUE": "Техника 5-4-3-2-1: назови 5 вещей которые видишь...",
+        "GREEN": "Почувствуй своё тело. Побудь с тем, что есть.",
+        "YELLOW": "Переключение внимания с абстрактного на сенсорный уровень."
+      }
+    },
+    {
+      "id": "self_observation", "label": "Самонаблюдение", "type": "practice",
+      "sd_levels": ["GREEN","YELLOW","TURQUOISE"]
+    },
+    {
+      "id": "boundaries", "label": "Границы", "type": "concept",
+      "sd_levels": ["RED","BLUE","ORANGE","GREEN","YELLOW"],
+      "sd_adaptations": {
+        "RED": "Чего ты не позволишь делать с собой",
+        "BLUE": "Правила взаимодействия, которые важно соблюдать",
+        "ORANGE": "Условия, при которых сотрудничество эффективно",
+        "GREEN": "Уважение к своим и чужим потребностям",
+        "YELLOW": "Динамическая система соглашений в зависимости от контекста"
+      }
+    }
+  ],
+  "edges": [
+    {"from": "anxiety", "to": "breathing_practice", "type": "helps_with", "weight": 0.90},
+    {"from": "anxiety", "to": "grounding", "type": "helps_with", "weight": 0.85},
+    {"from": "fear", "to": "grounding", "type": "helps_with", "weight": 0.80},
+    {"from": "anger", "to": "breathing_practice", "type": "helps_with", "weight": 0.75},
+    {"from": "emptiness", "to": "self_observation", "type": "helps_with", "weight": 0.70},
+    {"from": "guilt", "to": "boundaries", "type": "related_to", "weight": 0.65},
+    {"from": "loneliness", "to": "boundaries", "type": "related_to", "weight": 0.60}
+  ]
+}

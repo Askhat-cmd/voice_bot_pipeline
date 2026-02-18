@@ -1,0 +1,11 @@
+﻿# Шаблон для добавления нового автора.
+# Скопируй этот файл, переименуй и заполни все поля.
+author_id: ""
+display_name: ""
+youtube_channel_id: ""
+primary_sd_levels: []    # уровни СД которые покрывает автор
+language: "ru"
+terminology_file: ""
+collection_name: ""
+active: true
+description: ""

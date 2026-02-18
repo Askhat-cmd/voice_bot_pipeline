@@ -19,6 +19,7 @@ import yaml
 from env_utils import load_env
 from subtitle_extractor.get_subtitles import YouTubeSubtitlesExtractor
 from text_processor.sarsekenov_processor import SarsekenovProcessor
+from text_processor.sd_labeler import SDLabeler
 from vector_db import VectorDBManager, EmbeddingService, VectorIndexer
 from utils.video_registry import VideoRegistry, VideoMetadata, ProcessingRecord
 from utils.youtube_metadata_fetcher import YouTubeAPIMetadataFetcher
@@ -103,6 +104,46 @@ class PipelineOrchestrator:
             self.config['pipeline']['text_processing']['output_dir'],
         ]:
             Path(d).mkdir(parents=True, exist_ok=True)
+
+    def _apply_sd_labeling(self, sag_json_path: Path) -> None:
+        """Дополнить SAG JSON SD-метаданными блоков (best effort, без падения pipeline)."""
+        sd_cfg = self.config.get("sd_labeling", {})
+        if not sd_cfg.get("enabled", True):
+            self.logger.info("[PIPELINE] SD labeling disabled by config")
+            return
+
+        try:
+            with open(sag_json_path, "r", encoding="utf-8") as f:
+                sag_data = json.load(f)
+
+            blocks = sag_data.get("blocks", [])
+            if not blocks:
+                self.logger.warning("[PIPELINE] SD labeling skipped: no blocks in SAG JSON")
+                return
+
+            labeler = SDLabeler(
+                model=sd_cfg.get("model", "gpt-4o-mini"),
+                temperature=float(sd_cfg.get("temperature", 0.1)),
+                max_tokens=int(sd_cfg.get("max_tokens", 200)),
+                max_chars=int(sd_cfg.get("max_chars", 1500)),
+            )
+            author_id = (
+                sd_cfg.get("author_id")
+                or self.config.get("author", {}).get("author_id")
+                or "unknown"
+            )
+            sag_data["blocks"] = labeler.label_blocks_batch(blocks, author_id=author_id)
+
+            with open(sag_json_path, "w", encoding="utf-8") as f:
+                json.dump(sag_data, f, ensure_ascii=False, indent=2)
+
+            self.logger.info(
+                f"[PIPELINE] SD labeling complete: {len(sag_data['blocks'])} blocks labeled"
+            )
+        except Exception as exc:
+            self.logger.warning(
+                f"[PIPELINE] SD labeling failed: {exc}. Continue without SD metadata."
+            )
     
     def run_full_pipeline(self, youtube_url: str, custom_name: str = None) -> Dict[str, Any]:
         """Run the complete SAG v2.0 pipeline for a single YouTube URL"""
@@ -251,6 +292,9 @@ class PipelineOrchestrator:
                         text_result["md_output"] = str(new_md_path)
                 except Exception as e:
                     self.logger.warning(f"⚠️ Не удалось переименовать файлы: {e}")
+
+            # SD-разметка блоков после формирования SAG JSON
+            self._apply_sd_labeling(Path(text_result["json_output"]))
             
             results["stages"]["text_processing"] = {
                 "status": "success", 
