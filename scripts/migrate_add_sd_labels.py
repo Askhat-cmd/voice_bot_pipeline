@@ -27,6 +27,7 @@ from chromadb.errors import NotFoundError
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
+from env_utils import load_env  # noqa: E402
 from text_processor.sd_labeler import SDLabeler  # noqa: E402
 
 # ──────────────────────────────────────────────────────────────
@@ -386,11 +387,14 @@ def _parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
+    # Автозагрузка переменных из .env (если запуск идет без export в shell)
+    load_env()
+
     args = _parse_args()
 
     # Проверить что OPENAI_API_KEY есть
     if not os.getenv("OPENAI_API_KEY"):
-        logger.error("OPENAI_API_KEY не задан. Установи переменную окружения.")
+        logger.error("OPENAI_API_KEY не задан. Проверь .env или переменные окружения.")
         sys.exit(1)
 
     try:
