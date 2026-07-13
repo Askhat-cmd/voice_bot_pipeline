@@ -66,6 +66,8 @@ tmp/
 # data/pipeline_results/
 data/chromadb/
 data/video_registry.json
+data/transcript_registry.json
+transcript_output/
 
 # ========================================
 # СИСТЕМНЫЕ ФАЙЛЫ
@@ -106,4 +108,4 @@ node_modules/
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
